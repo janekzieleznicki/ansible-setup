@@ -1,0 +1,57 @@
+---
+- hosts: all
+  become: yes
+  vars:
+    users:
+      - name: jzieleznicki
+        groups: [docker, libvirt]
+      - name: test_user
+        groups: [docker, testgroup]
+  
+  tasks:
+  - name: install python3 swupd
+    swupd:
+      name: python3-basic
+      state: present
+    when: ansible_facts['os_family'] == 'ClearLinux'
+  
+  - name: Create groups
+    group:
+      name: "{{ item.1 }}"
+      state: present
+    loop: "{{ users | subelements('groups') | list | unique }}"
+
+  - name: Create user {{ item.name }}
+    user:
+      name: "{{ item.name }}"
+      password: '$6$sXo1wb.vXSXVqGgJ$2X7LhtDgfdll23s2WQvvwuqyvZ9eTlVGuLcPl4encc29eYr2eEInqajcWEJGz5vWdd0HR4AswBW0DpwivviFm.' #password <-secure
+      groups: "{{ item.groups }}"   # Empty by default.
+      shell: /bin/zsh
+      state: present
+      append: yes
+    with_items: "{{ users }}"
+
+  - name: Add user to wheel group on RedHat
+    user:
+      name: "{{ item.name  }}"
+      groups: wheel
+      state: present
+      append: yes
+    with_items: "{{ users }}"
+    when: ansible_facts['os_family'] == "RedHat"
+
+  - name: Add user to sudo group on Debian
+    user:
+      name: "{{ item.name  }}"
+      groups: sudo
+      state: present
+      append: yes
+    with_items: "{{ users }}"
+    when: ansible_facts['os_family'] == "Debian"
+
+  - name: Placing key {{ item.name  }}
+    authorized_key:
+      user: "{{ item.name  }}"
+      state: present
+      key: "{{ lookup('file', '~/.ssh/id_ed25519.pub') }}"
+    with_items: "{{ users }}"

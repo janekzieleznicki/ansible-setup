@@ -1,0 +1,34 @@
+---
+
+
+- name: Install @virtualization group on RedHats
+  dnf:
+    name:
+      - "{{ '@Virtualization' if ansible_facts['distribution'] == 'Fedora' else '@Virtualization Host'}}"
+      - libvirt-devel
+      - libxml2-devel
+      - make
+      - ruby-devel
+      - libxslt-devel
+      - libguestfs-tools-c
+      - byacc
+      - gcc
+      - gcc-c++
+      - cmake
+      - git
+    state: present
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Install deps on Debians
+  apt:
+    name: [qemu, qemu-kvm, libvirt-daemon-system, libvirt-clients, ebtables, dnsmasq-base, libxslt-dev, libxml2-dev, libvirt-dev, zlib1g-dev, ruby-dev, qemu-utils, gnupg]
+    state: present
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Enable source repos on Debains
+  replace:
+    path: /etc/apt/sources.list
+    regexp: '# deb-src '
+    replace: 'deb-src '
+  when: ansible_facts['os_family'] == 'Debian'

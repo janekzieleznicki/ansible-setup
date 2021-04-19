@@ -1,0 +1,46 @@
+---
+
+- name: dotfiles git clone
+  git:
+    repo: https://github.com/janekzieleznicki/dotfiles.git
+    dest: /home/{{ zsh_user }}/.dotfiles
+    force: yes
+  become: yes
+  become_user: "{{ zsh_user }}"
+  vars:
+    allow_world_readable_tmpfiles: true
+
+- name: dotfiles install
+  command: /home/{{ zsh_user }}/.dotfiles/install
+  become: yes
+  become_user: "{{ zsh_user }}"
+
+- name: change user shell to zsh
+  become: yes
+  user:
+    name: "{{ zsh_user }}"
+    shell: /bin/zsh
+
+- name: nvim plug install
+  command: nvim --headless +PlugInstall +qall
+  become: yes
+  become_user: "{{ zsh_user }}"
+
+- name: Correct async in python nvim files
+  replace:
+    path: /home/{{ zsh_user }}/.config/nvim/plugged/nvim-completion-manager/pythonx/cm.py
+    regexp: 'async=True'
+    replace: '**{"async": True}'
+
+- name: Correct async in python nvim files
+  replace:
+    path: /home/{{ zsh_user }}/.config/nvim/plugged/nvim-completion-manager/pythonx/cm_core.py
+    regexp: 'async=True'
+    replace: '**{"async": True}'
+
+- name: Rustup install
+  shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  args:
+    warn: no
+  become: yes
+  become_user: "{{ zsh_user }}"

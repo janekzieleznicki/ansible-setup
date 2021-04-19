@@ -1,0 +1,56 @@
+---
+
+- name: Build-deps on Debians for vagrant-libvirt
+  apt:
+    name:
+     - vagrant
+     - ruby-libvirt
+    state: build-dep
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install libssh sources on Fedora
+  shell: >
+    mkdir -p /tmp/libssh && cd /tmp/libssh && rm -rf ./* && \
+    dnf download --source libssh && \
+    rpm2cpio libssh-*.src.rpm | cpio -imdV && \
+    tar xf libssh-*.tar.xz && \
+    mkdir build && pushd build && \
+    cmake ../libssh-*/ -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/ && make && \
+    sudo /usr/bin/cp -a lib/libssh* /opt/vagrant/embedded/lib64 && \
+    rm -rf /tmp/libssh
+  when: ansible_facts['os_family'] == "RedHat"
+  become: yes
+  become_user: "{{ username }}"
+
+- name: Install krb5-libs sources on Fedora
+  shell: >
+    mkdir -p /tmp/krb5-libs && cd /tmp/krb5-libs && rm -rf ./* && \
+    dnf download --source krb5-libs && \
+    rpm2cpio krb5-*.src.rpm | cpio -imdV && \
+    tar xf krb5-*.tar.gz && \
+    cd krb5-*/src && \
+    ./configure && make && \
+    sudo /usr/bin/cp -a lib/crypto/libk5crypto.* /opt/vagrant/embedded/lib64/ && \
+    rm -rf /tmp/krb5-libs
+  when: ansible_facts['os_family'] == "RedHat"
+  become: yes
+  become_user: "{{ username }}"
+
+- name: adding existing user '{{ username }}' to group sudo
+  user:
+    name: '{{ username }}'
+    groups: libvirt
+    append: yes
+
+- name: ensure libvirtd service is enabled and active
+  service:
+    name: libvirtd
+    enabled: yes
+    state: started
+
+- name: Install vagrant libvirt on ubuntu
+  shell: vagrant plugin install vagrant-libvirt
+  become: yes
+  become_user: "{{ username }}"
+

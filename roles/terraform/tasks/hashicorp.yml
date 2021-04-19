@@ -1,0 +1,21 @@
+---
+
+- name: Install hashicorp repo key on Debian
+  apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install hashicorp repo on RedHat
+  shell: dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+  when: ansible_facts['distribution'] == 'CentOS' or ansible_facts['distribution'] == 'RedHat'
+
+- name: Install hashicorp repo on Fedora
+  shell: dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+  when: ansible_facts['distribution'] == 'Fedora'
+
+- name: Install hashicorp apt repo on Debian
+  apt_repository:
+    repo: deb https://apt.releases.hashicorp.com {{ansible_lsb['codename']}} main
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'

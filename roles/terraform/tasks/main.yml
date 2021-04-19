@@ -1,0 +1,5 @@
+---
+- include: install_packages.yml
+- include: hashicorp.yml
+- include: terraform.yml
+- include: vagrant.yml

@@ -1,0 +1,30 @@
+---
+
+- name: adding existing user '{{ username }}' to group sudo
+  user:
+    name: '{{ username }}'
+    groups: libvirt
+    append: yes
+
+- name: Install terraform
+  package:
+    name: 
+      - terraform 
+      - packer 
+      - vagrant
+    state: latest
+
+- name: Install terraform libvirt provider
+  file:
+    path: /home/{{ username }}/.terraform.d/plugins
+    state: directory
+  become: yes
+  become_user: "{{ username }}"
+
+- unarchive:
+    src: https://github.com/dmacvicar/terraform-provider-libvirt/releases/download/v{{ terraform_libvirt_plugin_vers }}/terraform-provider-libvirt-0.6.3+git.1604843676.67f4f2aa.{{ 'Fedora_32.x86_64' if ansible_facts['os_family'] == "RedHat" else 'Ubuntu_20.04.amd64' }}.tar.gz
+    dest: /home/{{ username }}/.terraform.d/plugins
+    remote_src: yes   
+  become: yes
+  become_user: "{{ username }}"
+
