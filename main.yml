@@ -2,6 +2,10 @@
   become: yes
   become_user: root
   gather_facts: True
+  vars:
+    install_dotfiles: yes
+    install_tools: yes
+    user: "{{ ansible_user_id }}"
   roles:
-    - { role: server, zsh_user: vagrant }
-    - { role: terraform, username: vagrant}
+    - { role: server, zsh_user: "{{ user }}", when: install_dotfiles }
+    - { role: terraform, username: "{{ user }}", when: install_tools }
