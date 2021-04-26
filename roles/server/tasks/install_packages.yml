@@ -42,3 +42,17 @@
     state: latest
   when: ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse" 
 
+- file:
+    path: /home/{{ zsh_user }}/.local/bin
+    state: directory
+  become: yes
+  become_user: "{{ zsh_user }}"
+  when: ansible_facts['distribution'] == "CentOS"
+
+- get_url: 
+    url: https://github.com/neovim/neovim/releases/download/v0.4.4/nvim.appimage 
+    dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
+    mode: '0755'
+  become: yes
+  become_user: "{{ zsh_user }}"
+  when: ansible_facts['distribution'] == "CentOS"

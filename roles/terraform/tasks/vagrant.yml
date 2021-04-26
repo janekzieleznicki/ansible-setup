@@ -19,7 +19,7 @@
     cmake ../libssh-*/ -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/ && make && \
     sudo /usr/bin/cp -a lib/libssh* /opt/vagrant/embedded/lib64 && \
     rm -rf /tmp/libssh
-  when: ansible_facts['os_family'] == "RedHat"
+  when: ansible_facts['os_family'] == 'RedHat'
   become: yes
   become_user: "{{ username }}"
 
@@ -33,7 +33,7 @@
     ./configure && make && \
     sudo /usr/bin/cp -a lib/crypto/libk5crypto.* /opt/vagrant/embedded/lib64/ && \
     rm -rf /tmp/krb5-libs
-  when: ansible_facts['os_family'] == "RedHat"
+  when: ansible_facts['os_family'] == 'RedHat'
   become: yes
   become_user: "{{ username }}"
 

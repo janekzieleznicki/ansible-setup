@@ -1,12 +1,13 @@
 Vagrant.configure("2") do |config|
   boxes = [
-    #{ :name => "debian", :box => "generic/debian10" },
+    { :name => "debian", :box => "generic/debian10" },
     { :name => "ubuntu", :box => "generic/ubuntu2004" },
     { :name => "fedora", :box => "fedora/33-cloud-base" },
-    #{ :name => "centos", :box => "centos/stream8" },
-    #{ :name => "opensuse", :box => "opensuse/Tumbleweed.x86_64" },
-    #{ :name => "opensuse-leap", :box => "opensuse/Leap-15.2.x86_64" },
-    #{ :name => "clear", :box => "AntonioMeireles/ClearLinux" },
+    { :name => "centos", :box => "centos/8" },
+    { :name => "centos-stream", :box => "centos/stream8" },
+    { :name => "opensuse", :box => "opensuse/Tumbleweed.x86_64" },
+    { :name => "opensuse-leap", :box => "opensuse/Leap-15.2.x86_64" },
+   # { :name => "clear", :box => "AntonioMeireles/ClearLinux" },
   ]
   boxes.each do |opts|
     config.vm.define opts[:name] do |config|
@@ -34,15 +35,19 @@ Vagrant.configure("2") do |config|
         config.vm.provision 'shell',
           inline: "rm -rf /var/cache/dnf"
       end
-      config.vm.provision "shell" do |s|
-        ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_ed25519.pub").first.strip
-        s.inline = <<-SHELL
-          echo #{ssh_pub_key} >> .ssh/authorized_keys
-          # echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
-        SHELL
-      end
+     # config.vm.provision "shell" do |s|
+     #   ssh_pub_key = File.readlines("#{Dir.home}/.ssh/id_ed25519.pub").first.strip
+     #   s.inline = <<-SHELL
+     #     echo #{ssh_pub_key} >> .ssh/authorized_keys
+     #     # echo #{ssh_pub_key} >> /root/.ssh/authorized_keys
+     #   SHELL
+     # end
       if opts[:name] == boxes.last[:name]
-        if ENV['ansible'] == 'remote'
+        if ENV['ansible'] == 'local'
+          config.vm.provision :ansible_local do |ansible|
+            ansible.playbook = 'main.yml'
+          end
+        else
           config.vm.provision :ansible do |ansible|
             ansible.playbook = "user.yml"
             ansible.limit = "all"
@@ -50,10 +55,10 @@ Vagrant.configure("2") do |config|
           config.vm.provision :ansible do |ansible|
             ansible.playbook = "main.yml"
             ansible.limit = "all"
-          end
-        else
-          config.vm.provision :ansible_local do |ansible|
-            ansible.playbook = 'main.yml'
+            ansible.extra_vars = {
+              user: 'vagrant',
+              #install_tools: 'false'
+            }
           end
         end
       end
