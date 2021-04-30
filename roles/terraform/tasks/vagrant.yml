@@ -21,7 +21,6 @@
     rm -rf /tmp/libssh
   when: ansible_facts['os_family'] == 'RedHat'
   become: yes
-  become_user: "{{ username }}"
 
 - name: Install krb5-libs sources on Fedora
   shell: >
@@ -35,7 +34,6 @@
     rm -rf /tmp/krb5-libs
   when: ansible_facts['os_family'] == 'RedHat'
   become: yes
-  become_user: "{{ username }}"
 
 - name: adding existing user '{{ username }}' to group sudo
   user:
