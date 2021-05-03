@@ -12,7 +12,7 @@
 - name: Install libssh sources on Fedora
   shell: >
     mkdir -p /tmp/libssh && cd /tmp/libssh && rm -rf ./* && \
-    dnf download --source libssh && \
+    {{ 'dnf download --source libssh' if ansible_distribution == 'Fedora' else 'wget http://vault.centos.org/8.3.2011/BaseOS/Source/SPackages/libssh-0.9.4-2.el8.src.rpm' }} && \ 
     rpm2cpio libssh-*.src.rpm | cpio -imdV && \
     tar xf libssh-*.tar.xz && \
     mkdir build && pushd build && \
@@ -25,7 +25,7 @@
 - name: Install krb5-libs sources on Fedora
   shell: >
     mkdir -p /tmp/krb5-libs && cd /tmp/krb5-libs && rm -rf ./* && \
-    dnf download --source krb5-libs && \
+    {{ 'dnf download --source krb5-libs' if ansible_distribution == 'Fedora' else 'wget http://vault.centos.org/8.3.2011/BaseOS/Source/SPackages/krb5-1.18.2-5.el8.src.rpm' }} && \
     rpm2cpio krb5-*.src.rpm | cpio -imdV && \
     tar xf krb5-*.tar.gz && \
     cd krb5-*/src && \
