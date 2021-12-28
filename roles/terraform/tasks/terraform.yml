@@ -14,17 +14,3 @@
       - vagrant
     state: latest
 
-- name: Install terraform libvirt provider
-  file:
-    path: /home/{{ username }}/.terraform.d/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.3/linux_amd64
-    state: directory
-  become: yes
-  become_user: "{{ username }}"
-
-- unarchive:
-    src: https://github.com/dmacvicar/terraform-provider-libvirt/releases/download/v0.6.3/terraform-provider-libvirt-0.6.3+git.1604843676.67f4f2aa.{{ 'Fedora_32.x86_64' if ansible_facts['os_family'] == "RedHat" else 'Ubuntu_20.04.amd64' }}.tar.gz
-    dest: /home/{{ username }}/.terraform.d/plugins/registry.terraform.io/dmacvicar/libvirt/0.6.3/linux_amd64
-    remote_src: yes   
-  become: yes
-  become_user: "{{ username }}"
-
