@@ -35,7 +35,7 @@
     executable: pip3
   when: ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == 'ClearLinux'
 
-- name: Install python3-neovim package bu package manager
+- name: Install python3-neovim package by package manager
   package:
     name:
       - python3-neovim
@@ -49,8 +49,9 @@
   become_user: "{{ zsh_user }}"
   when: ansible_facts['distribution'] == "CentOS"
 
-- get_url: 
-    url: https://github.com/neovim/neovim/releases/download/v0.4.4/nvim.appimage 
+- name: Download neovim appimage on CentOS
+  get_url: 
+    url: https://github.com/neovim/neovim/releases/download/v0.6.0/nvim.appimage
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
     mode: '0755'
   become: yes

@@ -3,6 +3,6 @@
 
 ## Run on localhost
 ```bash
-ansible-playbook -e user=$USER  -e install_tools=false --connection=local --inventory localhost, -K main.yml
+ansible-playbook -e user=$USER  --skip-tags="virtools" --connection=local --inventory localhost, -K main.yml
 ```
 
