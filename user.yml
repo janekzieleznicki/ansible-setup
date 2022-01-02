@@ -3,10 +3,8 @@
   become: yes
   vars:
     users:
-      - name: jzieleznicki
+      - name: vagrant
         groups: [docker, libvirt]
-      - name: test_user
-        groups: [docker, testgroup]
   
   tasks:
   - name: install python3 swupd
@@ -24,7 +22,7 @@
   - name: Create user {{ item.name }}
     user:
       name: "{{ item.name }}"
-      password: '$6$sXo1wb.vXSXVqGgJ$2X7LhtDgfdll23s2WQvvwuqyvZ9eTlVGuLcPl4encc29eYr2eEInqajcWEJGz5vWdd0HR4AswBW0DpwivviFm.' #password <-secure
+      password: '$6$9qyKGP0H9LyMnePI$YPOGp8J9KpRWYJhIMwl3lKlkXLW/ClliQ1dg8mXHGI8o2Y8b.OpbQC5xJxqJRF/2ARcNFZCjJgepmc9NAZB0T.' #vagrant
       groups: "{{ item.groups }}"   # Empty by default.
       shell: /bin/zsh
       state: present
@@ -38,7 +36,7 @@
       state: present
       append: yes
     with_items: "{{ users }}"
-    when: ansible_facts['os_family'] == "RedHat"
+    when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == 'ClearLinux'
 
   - name: Add user to sudo group on Debian
     user:
