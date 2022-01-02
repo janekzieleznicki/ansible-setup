@@ -1,9 +1,8 @@
 - hosts: all
   become: yes
-  become_user: root
   gather_facts: True
   vars:
-    user: "{{ ansible_user_id }}"
+    user: "{{ ansible_env.SUDO_USER or ansible_user_id }}"
   roles:
     - { role: server, zsh_user: "{{ user }}", tags: dotfiles }
     - { role: terraform, username: "{{ user }}", tags: virtools }
