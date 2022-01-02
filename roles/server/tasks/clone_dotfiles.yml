@@ -1,6 +1,6 @@
 ---
 
-- name: dotfiles git clone
+- name: dotfiles git clone for {{ zsh_user }}
   git:
     repo: https://github.com/janekzieleznicki/dotfiles.git
     dest: /home/{{ zsh_user }}/.dotfiles
@@ -10,7 +10,7 @@
   vars:
     allow_world_readable_tmpfiles: true
 
-- name: dotfiles install
+- name: dotfiles install for {{ zsh_user }}
   command: /home/{{ zsh_user }}/.dotfiles/install
   become: yes
   become_user: "{{ zsh_user }}"
