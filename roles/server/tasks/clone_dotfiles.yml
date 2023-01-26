@@ -1,15 +1,31 @@
 ---
 
-- name: dotfiles git clone for {{ zsh_user }}
+- name: dotfiles git clone for {{ zsh_user }} using ssh
+  git:
+    repo: git@github.com:janekzieleznicki/dotfiles.git
+    dest: /home/{{ zsh_user }}/.dotfiles
+    force: yes
+    version: "{{ dotfiles_version }}"
+  become: yes
+  become_user: "{{ zsh_user }}"
+  register: ssh_github
+  ignore_errors: yes
+  vars:
+    allow_world_readable_tmpfiles: true
+
+- name: Fallback to dotfiles git clone for {{ zsh_user }} using https
+  when: ssh_github is failed
   git:
     repo: https://github.com/janekzieleznicki/dotfiles.git
     dest: /home/{{ zsh_user }}/.dotfiles
     force: yes
+    version: "{{ dotfiles_version }}"
   become: yes
   become_user: "{{ zsh_user }}"
+  ignore_errors: yes
   vars:
     allow_world_readable_tmpfiles: true
-
+    
 - name: dotfiles install for {{ zsh_user }}
   command: /home/{{ zsh_user }}/.dotfiles/install
   become: yes
@@ -21,14 +37,7 @@
     name: "{{ zsh_user }}"
     shell: /bin/zsh
 
-- name: nvim plug install
-  command: nvim --headless +PlugInstall +qall
-  become: yes
-  become_user: "{{ zsh_user }}"
-
 - name: Rustup install
   shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  args:
-    warn: no
   become: yes
   become_user: "{{ zsh_user }}"

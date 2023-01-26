@@ -1,0 +1,21 @@
+---
+
+
+- name: ensure fonts directory
+  file:
+    path: "/home/{{ zsh_user }}/.local/share/fonts"
+    state: directory
+  become: yes
+  become_user: "{{ zsh_user }}"
+
+- name: "{{ font }} exists"
+  shell: "ls /home/{{ zsh_user }}/.local/share/fonts/{{ font }}*Nerd*Font*Complete*"
+  register: font_exists
+  ignore_errors: yes
+
+- name: "Download {{ font }}"
+  when: font_exists is failed
+  ansible.builtin.unarchive:
+    src: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.2/{{ font }}.zip
+    dest: "/home/{{ zsh_user }}/.local/share/fonts"
+    remote_src: yes

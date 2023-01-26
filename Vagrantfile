@@ -1,14 +1,17 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
 Vagrant.configure('2') do |config|
   boxes = [
-    { :name => 'fedora-previous', :box => 'fedora/34-cloud-base' },
-    { :name => 'fedora-newest', :box => 'fedora/35-cloud-base' },
+    { :name => 'fedora-previous', :box => 'fedora/36-cloud-base' },
+    { :name => 'fedora-newest', :box => 'fedora/37-cloud-base' },
     { :name => 'centos', :box => 'centos/8' },
     { :name => 'centos-stream', :box => 'centos/stream8' },
     { :name => 'opensuse', :box => 'opensuse/Tumbleweed.x86_64' },
-    { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.3.x86_64' },
+    { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.4.x86_64' },
     { :name => 'clear', :box => 'AntonioMeireles/ClearLinux' },
     { :name => 'debian', :box => 'generic/debian11' },
-    { :name => 'ubuntu', :box => 'generic/ubuntu2110' },
+    { :name => 'ubuntu', :box => 'generic/ubuntu2204' },
   ]
   boxes.each do |opts|
     config.vm.define opts[:name] do |config|
@@ -34,6 +37,13 @@ Vagrant.configure('2') do |config|
       if opts[:name] == 'centos-stream'
         config.vm.provision 'shell',
           inline: 'rm -rf /var/cache/dnf'
+      elsif 
+        opts[:name] == 'centos'
+        config.vm.provision 'shell',
+          inline: <<-SCRIPT
+          sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+          sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+          SCRIPT
       end
       if opts[:name] == boxes.last[:name]
         if ENV['ansible'] == 'local'
@@ -47,7 +57,7 @@ Vagrant.configure('2') do |config|
          # end
           config.vm.provision :ansible do |ansible|
             ansible.playbook = 'main.yml'
-            ansible.limit = 'all'
+            ansible.limit = ENV['MACHINE'] ? ENV['MACHINE'] : 'all'
             #ansible.verbose = 'vvv'
             ansible.extra_vars = {
               #user: 'vagrant',
