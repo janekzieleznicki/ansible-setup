@@ -3,10 +3,11 @@
 
 Vagrant.configure('2') do |config|
   boxes = [
-    { :name => 'fedora-previous', :box => 'fedora/36-cloud-base' },
-    { :name => 'fedora-newest', :box => 'fedora/37-cloud-base' },
-    { :name => 'centos', :box => 'centos/8' },
-    { :name => 'centos-stream', :box => 'centos/stream8' },
+    { :name => 'fedora-previous', :box => 'fedora/37-cloud-base' },
+    { :name => 'fedora-newest', :box => 'fedora/38-cloud-base' },
+    { :name => 'centos', :box => 'centos/9' },
+    { :name => 'centos-stream', :box => 'centos/stream9' },
+    { :name => 'rocky', :box => 'rockylinux/9' },
     { :name => 'opensuse', :box => 'opensuse/Tumbleweed.x86_64' },
     { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.4.x86_64' },
     { :name => 'clear', :box => 'AntonioMeireles/ClearLinux' },
