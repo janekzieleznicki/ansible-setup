@@ -1,33 +1,60 @@
 ---
+- name: Distro debug
+  debug: "msg='Detected os_family: {{ ansible_facts['os_family'] }} and distribution: {{ ansible_facts['distribution'] }}'"
 
 - name: install the epel repo
   dnf:
     name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
     state: present
     disable_gpg_check: yes
-  when: ansible_facts['distribution'] == "CentOS"
+  when: ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat"
 
 - name: Install packages rpm
   package:
-    name: [zsh, acl, git, curl, gcc, gcc-c++, fuse, nodejs, python3, python3-pip, python3-setuptools, python3-devel, unzip]
+    name:
+      [
+        zsh,
+        acl,
+        git,
+        curl,
+        gcc,
+        gcc-c++,
+        fuse,
+        nodejs,
+        python3,
+        python3-pip,
+        python3-setuptools,
+        python3-devel,
+        unzip,
+      ]
     state: latest
   when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == "Suse"
 
 - name: Install packages apt
   apt:
-    name: [zsh, acl, git, curl, fuse, nodejs, python3, python3-pip, python3-setuptools, python3-neovim, unzip]
+    name:
+      [
+        zsh,
+        acl,
+        git,
+        curl,
+        fuse,
+        nodejs,
+        python3,
+        python3-pip,
+        python3-setuptools,
+        python3-neovim,
+        unzip,
+      ]
     state: present
     update_cache: yes
   when: ansible_facts['os_family'] == "Debian"
 
 - name: Install packages swupd
   swupd:
-    name: 'c-basic zsh git acl curl fuse nodejs-basic python3-basic unzip'
+    name: "c-basic zsh git acl curl fuse nodejs-basic python3-basic unzip"
     state: present
   when: ansible_facts['os_family'] == 'ClearLinux'
-
-- name: Distro debug
-  debug: "msg='Detected os_family: {{ ansible_facts['os_family'] }} and distribution: {{ ansible_facts['distribution'] }}'"
 
 - name: Install neovim python package
   pip:
@@ -40,7 +67,7 @@
     name:
       - python3-neovim
     state: latest
-  when: ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse" 
+  when: ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse"
 
 - file:
     path: /home/{{ zsh_user }}/.local/bin
@@ -49,10 +76,10 @@
   become_user: "{{ zsh_user }}"
 
 - name: Download neovim appimage on CentOS
-  get_url: 
+  get_url:
     url: https://github.com/neovim/neovim/releases/download/v0.8.2/nvim.appimage
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
-    mode: '0755'
+    mode: "0755"
   become: yes
   become_user: "{{ zsh_user }}"
 
