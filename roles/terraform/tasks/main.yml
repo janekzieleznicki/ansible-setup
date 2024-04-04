@@ -1,5 +1,5 @@
 ---
-- include: install_packages.yml
-- include: hashicorp.yml
-- include: terraform.yml
-- include: vagrant.yml
+- import_tasks: install_packages.yml
+- import_tasks: hashicorp.yml
+- import_tasks: terraform.yml
+- import_tasks: vagrant.yml
