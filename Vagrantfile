@@ -3,16 +3,16 @@
 
 Vagrant.configure('2') do |config|
   boxes = [
-    { :name => 'fedora-previous', :box => 'fedora/37-cloud-base' },
-    { :name => 'fedora-newest', :box => 'fedora/38-cloud-base' },
-    { :name => 'centos', :box => 'centos/9' },
-    { :name => 'centos-stream', :box => 'centos/stream9' },
+    { :name => 'fedora-previous', :box => 'fedora/38-cloud-base' },
+    { :name => 'fedora-newest', :box => 'fedora/39-cloud-base' },
+    # { :name => 'rhel', :box => 'generic/rhel9' },
+    { :name => 'centos-stream', :box => 'generic/centos9s' },
     { :name => 'rocky', :box => 'rockylinux/9' },
     { :name => 'opensuse', :box => 'opensuse/Tumbleweed.x86_64' },
-    { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.4.x86_64' },
+    { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.5.x86_64' },
     { :name => 'clear', :box => 'AntonioMeireles/ClearLinux' },
-    { :name => 'debian', :box => 'generic/debian11' },
-    { :name => 'ubuntu', :box => 'generic/ubuntu2204' },
+    { :name => 'debian', :box => 'generic/debian12' },
+    { :name => 'ubuntu', :box => 'generic/ubuntu2310' },
   ]
   boxes.each do |opts|
     config.vm.define opts[:name] do |config|
@@ -25,7 +25,7 @@ Vagrant.configure('2') do |config|
         libvirt.machine_type = 'q35'
         libvirt.memory = 1024*2
         libvirt.cpus = 2
-        libvirt.machine_virtual_size = 16
+        libvirt.machine_virtual_size = 128
         libvirt.video_vram = 0
         libvirt.driver = 'kvm'
         
@@ -62,9 +62,15 @@ Vagrant.configure('2') do |config|
             #ansible.verbose = 'vvv'
             ansible.extra_vars = {
               #user: 'vagrant',
+              # ansible_password = 'V@grant!',
             }
             ansible.skip_tags = 'virtools'
-
+            ansible.host_vars = {
+              "clear" => {
+                "ansible_user"  =>  "clear",
+                "ansible_password"  =>  "V@grant!"
+              }
+            }
           end
         end
       end
