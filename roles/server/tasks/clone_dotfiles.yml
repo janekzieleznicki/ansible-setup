@@ -44,6 +44,9 @@
 
 
 - name: Install ripgrep
-  shell: cargo install ripgrep
+  command: ~/.cargo/bin/cargo install ripgrep
   become: yes
   become_user: "{{ zsh_user }}"
+
+# - name: Install NvChad
+#   command: "/home/{{ zsh_user }}/.local/bin/nvim.appimage -c 'Lazy sync' -c 'MasonInstallAll' --headless -R"

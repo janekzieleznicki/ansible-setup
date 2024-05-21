@@ -8,11 +8,19 @@
 
 - name: Install hashicorp repo on RedHat
   shell: dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-  when: ansible_facts['distribution'] == 'CentOS' or ansible_facts['distribution'] == 'RedHat'
+  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Fedora'
 
 - name: Install hashicorp repo on Fedora
   shell: dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
   when: ansible_facts['distribution'] == 'Fedora'
+
+# zypper addrepo https://download.opensuse.org/repositories/systemsmanagement:terraform/openSUSE_Tumbleweed/systemsmanagement:terraform.repo
+# zypper addrepo https://download.opensuse.org/repositories/systemsmanagement:terraform/15.6/systemsmanagement:terraform.repo
+
+# - name: Add python development repository
+#   community.general.zypper_repository:
+#     "https://download.opensuse.org/repositories/systemsmanagement:terraform/{{ansible_distribution_major_version}}/systemsmanagement:terraform.repo"
+#   when: ansible_distribution == "openSUSE Tumbleweed"
 
 - name: Install hashicorp apt repo on Debian
   apt_repository:

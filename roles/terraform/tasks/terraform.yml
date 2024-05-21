@@ -1,11 +1,5 @@
 ---
 
-- name: adding existing user '{{ username }}' to group sudo
-  user:
-    name: '{{ username }}'
-    groups: libvirt
-    append: yes
-
 - name: Install terraform
   package:
     name: 
@@ -13,4 +7,4 @@
       - packer 
       - vagrant
     state: latest
-
+  when: ansible_facts['os_family'] != 'ClearLinux'

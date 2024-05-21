@@ -1,39 +1,51 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
+SCALE=Integer(ENV['CPUS'] || 2)
+
 Vagrant.configure('2') do |config|
   boxes = [
-    { :name => 'fedora-previous', :box => 'fedora/38-cloud-base' },
-    { :name => 'fedora-newest', :box => 'fedora/39-cloud-base' },
+    ## Fedora
+    { :name => 'fedora-newest', :box => 'fedora/39-cloud-base', :ovmf=> true },
+    { :name => 'fedora-previous', :box => 'fedora/38-cloud-base', :ovmf=> true },
+    # RedHat
     # { :name => 'rhel', :box => 'generic/rhel9' },
-    { :name => 'centos-stream', :box => 'generic/centos9s' },
-    { :name => 'rocky', :box => 'rockylinux/9' },
-    { :name => 'opensuse', :box => 'opensuse/Tumbleweed.x86_64' },
-    { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.5.x86_64' },
-    { :name => 'clear', :box => 'AntonioMeireles/ClearLinux' },
-    { :name => 'debian', :box => 'generic/debian12' },
-    { :name => 'ubuntu', :box => 'generic/ubuntu2310' },
+    { :name => 'centos-stream', :box => 'generic/centos9s', :ovmf=> false },
+    { :name => 'rocky', :box => 'rockylinux/9', :ovmf=> true },
+    { :name => 'alma', :box => 'almalinux/9', :ovmf=> true },
+    { :name => 'oracle', :box => 'generic/oracle9', :ovmf=> false },
+    ## SUSE
+    { :name => 'opensuse', :box => 'opensuse/Tumbleweed.x86_64', :ovmf=> true },
+    { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.6.x86_64', :ovmf=> true },
+    # ClearLinux
+    { :name => 'clear', :box => 'AntonioMeireles/ClearLinux', :ovmf=> true },
+    # Debians
+    # { :name => 'debian', :box => 'debian/bookworm64', :ovmf=> false },
+    # { :name => 'ubuntu', :box => 'alvistack/ubuntu-24.04', :ovmf=> false },
   ]
   boxes.each do |opts|
     config.vm.define opts[:name] do |config|
       config.vm.box = opts[:box]
       config.vm.hostname = opts[:name]
+
       config.vm.provider 'libvirt' do |libvirt|
-        if opts[:name] == 'clear'
+        if opts[:ovmf]
           libvirt.loader = '/usr/share/OVMF/OVMF_CODE.fd'
         end
         libvirt.machine_type = 'q35'
-        libvirt.memory = 1024*2
-        libvirt.cpus = 2
-        libvirt.machine_virtual_size = 128
-        libvirt.video_vram = 0
         libvirt.driver = 'kvm'
+        libvirt.memory = 1024*SCALE
+        libvirt.cpus = SCALE
+        libvirt.machine_virtual_size = 128
+        # libvirt.video_vram = 0
         
         libvirt.host = 'localhost'
         libvirt.uri = 'qemu:///system'
 
         libvirt.nested = true
         libvirt.cpu_mode = 'host-passthrough'
+
+        libvirt.default_prefix = ""
       end
       if opts[:name] == 'centos-stream'
         config.vm.provision 'shell',
@@ -68,7 +80,13 @@ Vagrant.configure('2') do |config|
             ansible.host_vars = {
               "clear" => {
                 "ansible_user"  =>  "clear",
-                "ansible_password"  =>  "V@grant!"
+                "ansible_password"  =>  "V@grant!",
+              },
+              "fedora_newest" => {
+                "ansible_skip_tags" => "",
+              },
+              "fedora_previous" => {
+                "ansible_skip_tags" => "",
               }
             }
           end

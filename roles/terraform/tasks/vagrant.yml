@@ -12,34 +12,51 @@
 - name: Install libssh sources on Fedora
   shell: >
     mkdir -p /tmp/libssh && cd /tmp/libssh && rm -rf ./* && \
-    {{ 'dnf download --source libssh' if ansible_distribution == 'Fedora' else 'wget http://vault.centos.org/8.3.2011/BaseOS/Source/SPackages/libssh-0.9.4-2.el8.src.rpm' }} && \ 
+    dnf download --source libssh && \ 
     rpm2cpio libssh-*.src.rpm | cpio -imdV && \
     tar xf libssh-*.tar.xz && \
     mkdir build && pushd build && \
     cmake ../libssh-*/ -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/ && make && \
-    sudo /usr/bin/cp -a lib/libssh* /opt/vagrant/embedded/lib64 && \
+    sudo /usr/bin/cp -a lib/libssh* /opt/vagrant/embedded/lib && \
     rm -rf /tmp/libssh
-  when: ansible_facts['os_family'] == 'RedHat'
+  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Fedora'
   become: yes
 
 - name: Install krb5-libs sources on Fedora
   shell: >
     mkdir -p /tmp/krb5-libs && cd /tmp/krb5-libs && rm -rf ./* && \
-    {{ 'dnf download --source krb5-libs' if ansible_distribution == 'Fedora' else 'wget http://vault.centos.org/8.3.2011/BaseOS/Source/SPackages/krb5-1.18.2-5.el8.src.rpm' }} && \
+    dnf download --source krb5-libs && \
     rpm2cpio krb5-*.src.rpm | cpio -imdV && \
     tar xf krb5-*.tar.gz && \
     cd krb5-*/src && \
     ./configure && make && \
-    sudo /usr/bin/cp -a lib/crypto/libk5crypto.* /opt/vagrant/embedded/lib64/ && \
+    sudo /usr/bin/cp -a lib/crypto/libk5crypto.* /opt/vagrant/embedded/lib/ && \
     rm -rf /tmp/krb5-libs
-  when: ansible_facts['os_family'] == 'RedHat'
+  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Fedora'
   become: yes
 
-- name: adding existing user '{{ username }}' to group libvirt
+
+
+- name: Insert sudoers config for NFS
+  ansible.builtin.blockinfile:
+    block:  "{{ sudoers }}"
+    path: /etc/sudoers.d/vagrant-nfs
+    backup: yes
+    create: yes
+    validate: visudo -cf %s
+
+- name: Ensure group "{{ item }}" exists
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ user_groups }}"
+
+- name: adding existing user '{{ username }}' to group {{ item }}
   user:
     name: '{{ username }}'
-    groups: libvirt
+    groups: "{{ item }}"
     append: yes
+  loop: "{{ user_groups }}"
 
 - name: ensure libvirtd service is enabled and active
   service:
@@ -47,7 +64,7 @@
     enabled: yes
     state: started
 
-- name: Install vagrant libvirt on ubuntu
+- name: Install vagrant-libvirt
   shell: vagrant plugin install vagrant-libvirt
   become: yes
   become_user: "{{ username }}"
