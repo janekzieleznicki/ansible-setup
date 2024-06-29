@@ -31,6 +31,7 @@
         curl,
         gcc,
         gcc-c++,
+        go,
         fuse,
         nodejs,
         python3,
