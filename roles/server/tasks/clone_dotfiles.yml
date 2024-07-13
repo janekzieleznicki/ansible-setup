@@ -43,10 +43,12 @@
   become_user: "{{ zsh_user }}"
 
 
-- name: Install ripgrep
-  command: ~/.cargo/bin/cargo install ripgrep
+- name: "Install {{ item }}"
+  command: ~/.cargo/bin/cargo install {{ item }}
   become: yes
   become_user: "{{ zsh_user }}"
-
+  with_items:
+    - ripgrep
+    - zoxide
 # - name: Install NvChad
 #   command: "/home/{{ zsh_user }}/.local/bin/nvim.appimage -c 'Lazy sync' -c 'MasonInstallAll' --headless -R"
