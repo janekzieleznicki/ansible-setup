@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Alacritty
+Exec=/home/jzieleznicki/.cargo/bin/alacritty
+Icon=/home/jzieleznicki/.config/alacritty/icon.svg
+Type=Application
+Categories=Development
+Comment=Alacritty terminal

@@ -85,7 +85,7 @@
 - file:
     path: /home/{{ zsh_user }}/.local/bin
     state: directory
-  become: yes
+  become: true
   become_user: "{{ zsh_user }}"
 
 - name: Download neovim appimage on CentOS
@@ -93,7 +93,7 @@
     url: https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
     mode: "0755"
-  become: yes
+  become: true
   become_user: "{{ zsh_user }}"
 
 - name: Install fonts

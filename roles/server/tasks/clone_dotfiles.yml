@@ -42,13 +42,23 @@
   become: yes
   become_user: "{{ zsh_user }}"
 
-
 - name: "Install {{ item }}"
   command: ~/.cargo/bin/cargo install {{ item }}
+  environment: 
+    - RUSTFLAGS: "-C target-cpu=native"
   become: yes
   become_user: "{{ zsh_user }}"
   with_items:
     - ripgrep
     - zoxide
-# - name: Install NvChad
-#   command: "/home/{{ zsh_user }}/.local/bin/nvim.appimage -c 'Lazy sync' -c 'MasonInstallAll' --headless -R"
+    - alacritty
+
+- name: Create alacritty desktop entry
+  ansible.builtin.template:
+    src: alacritty.desktop 
+    dest: ~/.local/share/applications/alacritty.desktop
+- name: Copy alacritty icon
+  ansible.builtin.template:
+    src: alacritty.icon.svg
+    dest: ~/.config/alacritty/icon.svg
+
