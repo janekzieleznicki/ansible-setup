@@ -6,8 +6,8 @@ SCALE=Integer(ENV['CPUS'] || 2)
 Vagrant.configure('2') do |config|
   boxes = [
     ## Fedora
-    { :name => 'fedora-newest', :box => 'fedora/39-cloud-base', :ovmf=> true },
-    { :name => 'fedora-previous', :box => 'fedora/38-cloud-base', :ovmf=> true },
+    { :name => 'fedora-newest', :box => 'fedora/40-cloud-base', :ovmf=> true },
+    { :name => 'fedora-previous', :box => 'fedora/39-cloud-base', :ovmf=> true },
     # RedHat
     # { :name => 'rhel', :box => 'generic/rhel9' },
     { :name => 'centos-stream', :box => 'generic/centos9s', :ovmf=> false },
