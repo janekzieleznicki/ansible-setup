@@ -14,7 +14,7 @@
     state: enabled
   when: ansible_distribution == "RedHat" and ansible_distribution_major_version == 8
 
-- name: install the epel repo
+- name: Install the epel repo
   dnf:
     name: epel-release
     state: present
@@ -31,6 +31,7 @@
         curl,
         gcc,
         gcc-c++,
+        cmake,
         go,
         fuse,
         nodejs,
@@ -39,6 +40,7 @@
         python3-setuptools,
         python3-devel,
         unzip,
+        fontconfig-devel,
       ]
     state: latest
   when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == "Suse"
@@ -51,7 +53,9 @@
         acl,
         git,
         curl,
+        cmake,
         fuse,
+        libfontconfig-dev,
         nodejs,
         python3,
         python3-pip,
@@ -65,7 +69,7 @@
 
 - name: Install packages swupd
   swupd:
-    name: "c-basic zsh git acl curl fuse nodejs-basic python3-basic unzip"
+    name: "c-basic zsh git acl curl fuse nodejs-basic python3-basic unzip devpkg-fontconfig go-basic"
     state: present
   when: ansible_facts['os_family'] == 'ClearLinux'
 
@@ -88,7 +92,7 @@
   become: true
   become_user: "{{ zsh_user }}"
 
-- name: Download neovim appimage on CentOS
+- name: Download neovim appimage
   get_url:
     url: https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage

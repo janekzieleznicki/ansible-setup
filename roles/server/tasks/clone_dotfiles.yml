@@ -9,7 +9,7 @@
   become: yes
   become_user: "{{ zsh_user }}"
   register: ssh_github
-  ignore_errors: yes
+  ignore_errors: true
   vars:
     allow_world_readable_tmpfiles: true
 
@@ -42,7 +42,14 @@
   become: yes
   become_user: "{{ zsh_user }}"
 
-- name: "Install {{ item }}"
+- name: "Go Install {{ item }}"
+  command: go install {{ item }}
+  become: true
+  become_user: "{{ zsh_user }}"
+  with_items: 
+    - github.com/jesseduffield/lazygit@latest
+
+- name: "Cargo Install {{ item }}"
   command: ~/.cargo/bin/cargo install {{ item }}
   environment: 
     - RUSTFLAGS: "-C target-cpu=native"
@@ -57,8 +64,10 @@
   ansible.builtin.template:
     src: alacritty.desktop 
     dest: ~/.local/share/applications/alacritty.desktop
+  ignore_errors: true
+
 - name: Copy alacritty icon
   ansible.builtin.template:
     src: alacritty.icon.svg
     dest: ~/.config/alacritty/icon.svg
-
+  ignore_errors: true
