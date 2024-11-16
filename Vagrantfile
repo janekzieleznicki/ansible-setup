@@ -6,10 +6,10 @@ SCALE=Integer(ENV['CPUS'] || 2)
 Vagrant.configure('2') do |config|
   boxes = [
     ## Fedora
-    { :name => 'fedora-newest', :box => 'fedora/40-cloud-base', :ovmf=> true },
-    { :name => 'fedora-previous', :box => 'fedora/39-cloud-base', :ovmf=> true },
+    { :name => 'fedora-newest', :box => 'fedora/41-cloud-base', :ovmf=> true },
+    { :name => 'fedora-previous', :box => 'fedora/40-cloud-base', :ovmf=> true },
     # RedHat
-    # { :name => 'rhel', :box => 'generic/rhel9' },
+    { :name => 'rhel', :box => 'generic/rhel9' },
     { :name => 'centos-stream', :box => 'generic/centos9s', :ovmf=> false },
     { :name => 'rocky', :box => 'rockylinux/9', :ovmf=> true },
     { :name => 'alma', :box => 'almalinux/9', :ovmf=> true },
@@ -20,8 +20,8 @@ Vagrant.configure('2') do |config|
     # ClearLinux
     { :name => 'clear', :box => 'AntonioMeireles/ClearLinux', :ovmf=> true },
     # Debians
-    # { :name => 'debian', :box => 'debian/bookworm64', :ovmf=> false },
-    # { :name => 'ubuntu', :box => 'alvistack/ubuntu-24.04', :ovmf=> false },
+    { :name => 'debian', :box => 'generic/debian12', :ovmf=> false },
+    # { :name => 'ubuntu', :box => 'bento/ubuntu-24.04', :ovmf=> false },
   ]
   boxes.each do |opts|
     config.vm.define opts[:name] do |config|
