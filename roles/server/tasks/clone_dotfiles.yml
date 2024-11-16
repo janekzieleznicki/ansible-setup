@@ -65,9 +65,20 @@
     src: alacritty.desktop 
     dest: ~/.local/share/applications/alacritty.desktop
   ignore_errors: true
+  become: true
+  become_user: "{{ zsh_user }}"
+
+- name: Create ~/.config/alacritty directory
+  file:
+    path: ~/.config/alacritty
+    state: directory
+  become: true
+  become_user: "{{ zsh_user }}"
 
 - name: Copy alacritty icon
   ansible.builtin.template:
     src: alacritty.icon.svg
     dest: ~/.config/alacritty/icon.svg
   ignore_errors: true
+  become: true
+  become_user: "{{ zsh_user }}"
