@@ -8,8 +8,8 @@ Vagrant.configure('2') do |config|
     ## Fedora
     { :name => 'fedora-newest', :box => 'fedora/41-cloud-base', :ovmf=> true },
     { :name => 'fedora-previous', :box => 'fedora/40-cloud-base', :ovmf=> true },
-    # RedHat
-    { :name => 'rhel', :box => 'generic/rhel9' },
+    ## RedHat
+    { :name => 'rhel', :box => 'generic/rhel8' },
     { :name => 'centos-stream', :box => 'generic/centos9s', :ovmf=> false },
     { :name => 'rocky', :box => 'rockylinux/9', :ovmf=> true },
     { :name => 'alma', :box => 'almalinux/9', :ovmf=> true },
@@ -17,10 +17,10 @@ Vagrant.configure('2') do |config|
     ## SUSE
     { :name => 'opensuse', :box => 'opensuse/Tumbleweed.x86_64', :ovmf=> true },
     { :name => 'opensuse-leap', :box => 'opensuse/Leap-15.6.x86_64', :ovmf=> true },
-    # ClearLinux
-    { :name => 'clear', :box => 'AntonioMeireles/ClearLinux', :ovmf=> true },
-    # Debians
-    { :name => 'debian', :box => 'generic/debian12', :ovmf=> false },
+    ## ClearLinux
+    # { :name => 'clear', :box => 'AntonioMeireles/ClearLinux', :ovmf=> true },
+    ## Debians
+    # { :name => 'debian', :box => 'generic/debian12', :ovmf=> false },
     # { :name => 'ubuntu', :box => 'bento/ubuntu-24.04', :ovmf=> false },
   ]
   boxes.each do |opts|
@@ -51,7 +51,12 @@ Vagrant.configure('2') do |config|
         config.vm.provision 'shell',
           inline: 'rm -rf /var/cache/dnf'
       elsif 
-        opts[:name] == 'centos'
+        opts[:name] == 'fedora-newest'
+        config.vm.provision 'shell',
+          inline: <<-SCRIPT
+          dnf install -y python3-libdnf5
+          SCRIPT
+      elsif opts[:name] == 'centos' || opts[:name] == 'centos-stream'
         config.vm.provision 'shell',
           inline: <<-SCRIPT
           sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
