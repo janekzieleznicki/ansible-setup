@@ -6,7 +6,7 @@
     dest: /home/{{ zsh_user }}/.dotfiles
     force: yes
     version: "{{ dotfiles_version }}"
-  become: yes
+  become: true
   become_user: "{{ zsh_user }}"
   register: ssh_github
   ignore_errors: true
@@ -20,26 +20,33 @@
     dest: /home/{{ zsh_user }}/.dotfiles
     force: yes
     version: "{{ dotfiles_version }}"
-  become: yes
+  become: true
   become_user: "{{ zsh_user }}"
   ignore_errors: yes
   vars:
     allow_world_readable_tmpfiles: true
     
+- name: Create ~/.config/alacritty directory
+  file:
+    path: ~/.config/alacritty
+    state: directory
+  become: true
+  become_user: "{{ zsh_user }}"
+
 - name: dotfiles install for {{ zsh_user }}
   command: /home/{{ zsh_user }}/.dotfiles/install
-  become: yes
+  become: true
   become_user: "{{ zsh_user }}"
 
 - name: change user shell to zsh
-  become: yes
+  become: true
   user:
     name: "{{ zsh_user }}"
     shell: /bin/zsh
 
 - name: Rustup install
   shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
-  become: yes
+  become: true
   become_user: "{{ zsh_user }}"
 
 - name: "Go Install {{ item }}"
@@ -53,7 +60,7 @@
   command: ~/.cargo/bin/cargo install {{ item }}
   environment: 
     - RUSTFLAGS: "-C target-cpu=native"
-  become: yes
+  become: true
   become_user: "{{ zsh_user }}"
   with_items:
     - ripgrep
@@ -65,13 +72,6 @@
     src: alacritty.desktop 
     dest: ~/.local/share/applications/alacritty.desktop
   ignore_errors: true
-  become: true
-  become_user: "{{ zsh_user }}"
-
-- name: Create ~/.config/alacritty directory
-  file:
-    path: ~/.config/alacritty
-    state: directory
   become: true
   become_user: "{{ zsh_user }}"
 
