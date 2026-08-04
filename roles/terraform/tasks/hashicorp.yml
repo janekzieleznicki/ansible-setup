@@ -11,7 +11,7 @@
   when: ansible_os_family == 'RedHat' and ansible_distribution != 'Fedora'
 
 - name: Install hashicorp repo on Fedora
-  shell: dnf config-manager --add-repo https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
+  shell: dnf config-manager addrepo --overwrite --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
   when: ansible_facts['distribution'] == 'Fedora'
 
 # zypper addrepo https://download.opensuse.org/repositories/systemsmanagement:terraform/openSUSE_Tumbleweed/systemsmanagement:terraform.repo
