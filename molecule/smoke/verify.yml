@@ -1,0 +1,37 @@
+---
+- name: Verify smoke
+  hosts: all
+  gather_facts: true
+  vars:
+    core_packages:
+      - python3
+      - sudo
+      - curl
+      - tar
+    family_extra:
+      RedHat: [dnf]
+      Suse: [zypper]
+    expected_packages: "{{ core_packages + family_extra[ansible_os_family] | default([]) }}"
+  tasks:
+    - name: Probe package presence in the base image
+      ansible.builtin.command: rpm -q --whatprovides {{ item }}
+      register: pkg_check
+      changed_when: false
+      failed_when: false
+      loop: "{{ expected_packages }}"
+      loop_control:
+        label: "{{ item }}"
+
+    - name: Assert core packages are present in the base image
+      ansible.builtin.assert:
+        that:
+          - item.rc == 0
+      loop: "{{ pkg_check.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Assert package manager is usable
+      ansible.builtin.assert:
+        that:
+          - ansible_pkg_mgr in ['dnf', 'dnf5', 'yum', 'zypper']
+          - ansible_facts.pkg_mgr is defined

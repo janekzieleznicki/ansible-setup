@@ -32,7 +32,7 @@
         gcc,
         gcc-c++,
         cmake,
-        go,
+        golang,
         fuse,
         nodejs,
         python3,
@@ -94,7 +94,7 @@
 
 - name: Download neovim appimage
   get_url:
-    url: https://github.com/neovim/neovim/releases/latest/download/nvim.appimage
+    url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
     mode: "0755"
   become: true

@@ -1,0 +1,8 @@
+---
+- name: Prepare
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Ensure python3 is present
+      ansible.builtin.raw: python3 --version
+      changed_when: false

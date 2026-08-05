@@ -1,0 +1,10 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+RUN zypper --non-interactive install \
+        python3 \
+        python3-rpm \
+        sudo \
+        curl \
+        tar \
+    && zypper clean --all
