@@ -2,10 +2,12 @@
 - name: Load cargo packages variable file
   include_vars: cargo_packages.yml
 
-- name: "Cargo Install {{ item }}"
+- name: Cargo Install
   command: ~/.cargo/bin/cargo install {{ item }}
   environment:
     RUSTFLAGS: "-C target-cpu=native"
   become: true
   become_user: "{{ zsh_user }}"
   loop: "{{ cargo_packages }}"
+  loop_control:
+    label: "{{ item }}"

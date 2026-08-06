@@ -15,19 +15,13 @@
   include_vars: fonts.yml
 
 - name: Distro debug
-  debug: "msg='Detected os_family: {{ ansible_os_family }} and distribution: {{ ansible_distribution }} version: {{ ansible_distribution_major_version }}'"
+  debug: "msg='Detected os_family: {{ ansible_facts['os_family'] }} and distribution: {{ ansible_facts['distribution'] }} version: {{ ansible_facts['distribution_major_version'] }}'"
 
-- name: Ensure the crb repository is enabled
+- name: Enable the powertools/crb repo so packages are available
   community.general.dnf_config_manager:
-    name: crb
+    name: "{{ 'powertools' if (ansible_facts['distribution'] == 'CentOS' and ansible_facts['distribution_major_version'] == '8') else 'crb' }}"
     state: enabled
-  when: ansible_distribution == "RedHat" and ansible_distribution_major_version == 9
-
-- name: Ensure the crb repository is enabled
-  community.general.dnf_config_manager:
-    name: powertools
-    state: enabled
-  when: ansible_distribution == "RedHat" and ansible_distribution_major_version == 8
+  when: ansible_facts['os_family'] == "RedHat"
 
 - name: Install the epel repo
   dnf:

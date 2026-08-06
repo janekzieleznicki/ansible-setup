@@ -11,7 +11,7 @@
     family_extra:
       RedHat: [dnf]
       Suse: [zypper]
-    expected_packages: "{{ core_packages + family_extra[ansible_os_family] | default([]) }}"
+    expected_packages: "{{ core_packages + family_extra[ansible_facts['os_family']] | default([]) }}"
   tasks:
     - name: Probe package presence in the base image
       ansible.builtin.command: rpm -q --whatprovides {{ item }}
@@ -33,5 +33,5 @@
     - name: Assert package manager is usable
       ansible.builtin.assert:
         that:
-          - ansible_pkg_mgr in ['dnf', 'dnf5', 'yum', 'zypper']
+          - ansible_facts.pkg_mgr in ['dnf', 'dnf5', 'yum', 'zypper']
           - ansible_facts.pkg_mgr is defined

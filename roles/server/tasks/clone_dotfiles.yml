@@ -49,7 +49,7 @@
   become: true
   become_user: "{{ zsh_user }}"
 
-- name: "Go Install {{ item }}"
+- name: Go Install
   command: go install {{ item }}
   environment:
     GOTOOLCHAIN: "auto"
@@ -58,6 +58,8 @@
   become_user: "{{ zsh_user }}"
   with_items: 
     - github.com/jesseduffield/lazygit@latest
+  loop_control:
+    label: "{{ item }}"
 
 - name: Create alacritty desktop entry
   ansible.builtin.template:

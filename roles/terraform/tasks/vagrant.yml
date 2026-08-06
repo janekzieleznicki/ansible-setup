@@ -19,7 +19,7 @@
     cmake ../libssh-*/ -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/ && make && \
     sudo /usr/bin/cp -a lib/libssh* /opt/vagrant/embedded/lib && \
     rm -rf /tmp/libssh
-  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Fedora'
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution'] != 'Fedora'
   become: yes
 
 - name: Install krb5-libs sources on Fedora
@@ -32,7 +32,7 @@
     ./configure && make && \
     sudo /usr/bin/cp -a lib/crypto/libk5crypto.* /opt/vagrant/embedded/lib/ && \
     rm -rf /tmp/krb5-libs
-  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Fedora'
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution'] != 'Fedora'
   become: yes
 
 
@@ -45,18 +45,22 @@
     create: yes
     validate: visudo -cf %s
 
-- name: Ensure group "{{ item }}" exists
+- name: Ensure group exists
   ansible.builtin.group:
     name: "{{ item }}"
     state: present
   loop: "{{ user_groups }}"
+  loop_control:
+    label: "{{ item }}"
 
-- name: adding existing user '{{ username }}' to group {{ item }}
+- name: Add user to group
   user:
     name: '{{ username }}'
     groups: "{{ item }}"
     append: yes
   loop: "{{ user_groups }}"
+  loop_control:
+    label: "{{ item }}"
 
 - name: ensure libvirtd service is enabled and active
   service:

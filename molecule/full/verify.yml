@@ -42,8 +42,8 @@
     extra_packages:
       Fedora: [python3-neovim]
       RedHat: [epel-release]
-    expected_packages: "{{ package_sets[ansible_os_family] | default([])
-        + extra_packages[ansible_distribution] | default([]) }}"
+    expected_packages: "{{ package_sets[ansible_facts['os_family']] | default([])
+        + extra_packages[ansible_facts['distribution']] | default([]) }}"
     artifact_paths:
       - /home/root/.local/bin/nvim.appimage
       - /root/.config/alacritty/icon.svg

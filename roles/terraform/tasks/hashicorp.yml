@@ -8,7 +8,7 @@
 
 - name: Install hashicorp repo on RedHat
   shell: dnf config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-  when: ansible_os_family == 'RedHat' and ansible_distribution != 'Fedora'
+  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution'] != 'Fedora'
 
 - name: Install hashicorp repo on Fedora
   shell: dnf config-manager addrepo --overwrite --from-repofile=https://rpm.releases.hashicorp.com/fedora/hashicorp.repo
@@ -24,6 +24,6 @@
 
 - name: Install hashicorp apt repo on Debian
   apt_repository:
-    repo: deb https://apt.releases.hashicorp.com {{ansible_lsb['codename']}} main
+    repo: deb https://apt.releases.hashicorp.com {{ansible_facts['lsb']['codename']}} main
     state: present
   when: ansible_facts['os_family'] == 'Debian'
