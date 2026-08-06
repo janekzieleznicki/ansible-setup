@@ -1,27 +1,20 @@
 ---
 
+- name: Load terraform packages redhat variable file
+  include_vars: packages_redhat.yml
+
+- name: Load terraform packages debian variable file
+  include_vars: packages_debian.yml
 
 - name: Install @virtualization group on RedHats
   dnf:
-    name:
-      - "{{ '@Virtualization' if ansible_facts['distribution'] == 'Fedora' else '@Virtualization Host'}}"
-      - libvirt-devel
-      - libxml2-devel
-      - make
-      - ruby-devel
-      - libxslt-devel
-      - libguestfs-tools-c
-      - byacc
-      - gcc
-      - gcc-c++
-      - cmake
-      - git
+    name: "{{ packages_redhat }}"
     state: present
   when: ansible_facts['os_family'] == "RedHat"
 
 - name: Install deps on Debians
   apt:
-    name: [qemu, qemu-kvm, libvirt-daemon-system, libvirt-clients, ebtables, dnsmasq-base, libxslt-dev, libxml2-dev, libvirt-dev, zlib1g-dev, ruby-dev, qemu-utils, gnupg]
+    name: "{{ packages_debian }}"
     state: present
     update_cache: yes
   when: ansible_facts['os_family'] == 'Debian'

@@ -1,4 +1,19 @@
 ---
+- name: Load server packages rpm variable file
+  include_vars: packages_rpm.yml
+
+- name: Load server packages apt variable file
+  include_vars: packages_apt.yml
+
+- name: Load server packages swupd variable file
+  include_vars: packages_swupd.yml
+
+- name: Load server neovim variable file
+  include_vars: neovim.yml
+
+- name: Load server fonts variable file
+  include_vars: fonts.yml
+
 - name: Distro debug
   debug: "msg='Detected os_family: {{ ansible_os_family }} and distribution: {{ ansible_distribution }} version: {{ ansible_distribution_major_version }}'"
 
@@ -23,59 +38,26 @@
 
 - name: Install packages rpm
   package:
-    name:
-      [
-        zsh,
-        acl,
-        git,
-        curl,
-        gcc,
-        gcc-c++,
-        cmake,
-        golang,
-        fuse,
-        nodejs,
-        python3,
-        python3-pip,
-        python3-setuptools,
-        python3-devel,
-        unzip,
-        fontconfig-devel,
-      ]
+    name: "{{ packages_rpm }}"
     state: latest
   when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == "Suse"
 
 - name: Install packages apt
   apt:
-    name:
-      [
-        zsh,
-        acl,
-        git,
-        curl,
-        cmake,
-        fuse,
-        libfontconfig-dev,
-        nodejs,
-        python3,
-        python3-pip,
-        python3-setuptools,
-        python3-neovim,
-        unzip,
-      ]
+    name: "{{ packages_apt }}"
     state: present
     update_cache: yes
   when: ansible_facts['os_family'] == "Debian"
 
 - name: Install packages swupd
   swupd:
-    name: "c-basic zsh git acl curl fuse nodejs-basic python3-basic unzip devpkg-fontconfig go-basic"
+    name: "{{ packages_swupd }}"
     state: present
   when: ansible_facts['os_family'] == 'ClearLinux'
 
 - name: Install neovim python package
   pip:
-    name: neovim
+    name: "{{ neovim_pip_package }}"
     executable: pip3
   when: ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == 'ClearLinux'
 
@@ -94,16 +76,14 @@
 
 - name: Download neovim appimage
   get_url:
-    url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+    url: "{{ neovim_appimage_url }}"
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
     mode: "0755"
   become: true
   become_user: "{{ zsh_user }}"
 
 - name: Install fonts
-  with_items:
-    - "Hack"
-    - "JetBrainsMono"
+  with_items: "{{ fonts }}"
   include_role:
     name: nerd-font
   vars:

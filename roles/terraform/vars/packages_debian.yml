@@ -1,0 +1,15 @@
+---
+packages_debian:
+  - qemu
+  - qemu-kvm
+  - libvirt-daemon-system
+  - libvirt-clients
+  - ebtables
+  - dnsmasq-base
+  - libxslt-dev
+  - libxml2-dev
+  - libvirt-dev
+  - zlib1g-dev
+  - ruby-dev
+  - qemu-utils
+  - gnupg

@@ -1,0 +1,15 @@
+---
+packages_apt:
+  - zsh
+  - acl
+  - git
+  - curl
+  - cmake
+  - fuse
+  - libfontconfig-dev
+  - nodejs
+  - python3
+  - python3-pip
+  - python3-setuptools
+  - python3-neovim
+  - unzip

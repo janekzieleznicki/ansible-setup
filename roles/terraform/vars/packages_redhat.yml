@@ -1,0 +1,14 @@
+---
+packages_redhat:
+  - "{{ '@Virtualization' if ansible_facts['distribution'] == 'Fedora' else '@Virtualization Host'}}"
+  - libvirt-devel
+  - libxml2-devel
+  - make
+  - ruby-devel
+  - libxslt-devel
+  - libguestfs-tools-c
+  - byacc
+  - gcc
+  - gcc-c++
+  - cmake
+  - git

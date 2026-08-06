@@ -1,0 +1,3 @@
+---
+neovim_appimage_url: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.appimage
+neovim_pip_package: neovim
