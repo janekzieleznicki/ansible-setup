@@ -1,0 +1,5 @@
+---
+cargo_packages:
+  - ripgrep
+  - zoxide
+  - alacritty

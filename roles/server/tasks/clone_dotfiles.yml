@@ -59,17 +59,6 @@
   with_items: 
     - github.com/jesseduffield/lazygit@latest
 
-- name: "Cargo Install {{ item }}"
-  command: ~/.cargo/bin/cargo install {{ item }}
-  environment: 
-    - RUSTFLAGS: "-C target-cpu=native"
-  become: true
-  become_user: "{{ zsh_user }}"
-  with_items:
-    - ripgrep
-    - zoxide
-    - alacritty
-
 - name: Create alacritty desktop entry
   ansible.builtin.template:
     src: alacritty.desktop 
