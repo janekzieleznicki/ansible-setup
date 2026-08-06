@@ -25,6 +25,12 @@ platforms:
   - name: oracle
     image: localhost/molecule-el:oracle-9
     pre_build_image: true
+  - name: rocky-10
+    image: localhost/molecule-el:rocky-10
+    pre_build_image: true
+  - name: oracle-10
+    image: localhost/molecule-el:oracle-10
+    pre_build_image: true
   - name: opensuse
     image: localhost/molecule-suse:tumbleweed
     pre_build_image: true

@@ -9,7 +9,7 @@ DOCKERFILES := dockerfiles
 
 FEDORA_PLATFORMS := fedora:41 fedora:40
 EL_PLATFORMS     := rockylinux:8 quay.io/centos/centos:stream9 \
-                    rockylinux:9 almalinux:9 oraclelinux:9
+                    rockylinux:9 almalinux:9 oraclelinux:9 rockylinux:10 oraclelinux:10
 SUSE_PLATFORMS   := registry.opensuse.org/opensuse/tumbleweed:latest \
                     registry.opensuse.org/opensuse/leap:15.6
 
@@ -32,6 +32,8 @@ images:
 	$(PODMAN) build --build-arg BASE_IMAGE=rockylinux:9 -t $(MOLECULE_IMAGE)-el:rocky-9 -f $(DOCKERFILES)/Containerfile.el .
 	$(PODMAN) build --build-arg BASE_IMAGE=almalinux:9 -t $(MOLECULE_IMAGE)-el:alma-9 -f $(DOCKERFILES)/Containerfile.el .
 	$(PODMAN) build --build-arg BASE_IMAGE=oraclelinux:9 -t $(MOLECULE_IMAGE)-el:oracle-9 -f $(DOCKERFILES)/Containerfile.el .
+	$(PODMAN) build --build-arg BASE_IMAGE=rockylinux:10 -t $(MOLECULE_IMAGE)-el:rocky-10 -f $(DOCKERFILES)/Containerfile.el10 .
+	$(PODMAN) build --build-arg BASE_IMAGE=oraclelinux:10 -t $(MOLECULE_IMAGE)-el:oracle-10 -f $(DOCKERFILES)/Containerfile.el10 .
 	$(PODMAN) build --build-arg BASE_IMAGE=registry.opensuse.org/opensuse/tumbleweed:latest -t $(MOLECULE_IMAGE)-suse:tumbleweed -f $(DOCKERFILES)/Containerfile.suse .
 	$(PODMAN) build --build-arg BASE_IMAGE=registry.opensuse.org/opensuse/leap:15.6 -t $(MOLECULE_IMAGE)-suse:leap-15.6 -f $(DOCKERFILES)/Containerfile.leap .
 
@@ -53,5 +55,6 @@ destroy:
 clean: destroy
 	$(PODMAN) rmi -f $(MOLECULE_IMAGE)-fedora:41 $(MOLECULE_IMAGE)-fedora:40 \
 		$(MOLECULE_IMAGE)-el:8 $(MOLECULE_IMAGE)-el:stream9 $(MOLECULE_IMAGE)-el:rocky-9 \
-		$(MOLECULE_IMAGE)-el:alma-9 $(MOLECULE_IMAGE)-el:oracle-9 \
+		$(MOLECULE_IMAGE)-el:alma-9 $(MOLECULE_IMAGE)-el:oracle-9 $(MOLECULE_IMAGE)-el:rocky-10 \
+		$(MOLECULE_IMAGE)-el:oracle-10 \
 		$(MOLECULE_IMAGE)-suse:tumbleweed $(MOLECULE_IMAGE)-suse:leap-15.6 2>/dev/null || true

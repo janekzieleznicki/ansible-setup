@@ -27,10 +27,11 @@ make converge    # molecule converge -s full (debug against running container)
 ```
 
 Always run `make test-smoke` and `make test-full` before finishing; they must
-pass on all 9 platforms:
+pass on all 10 platforms:
 
 - fedora-newest (fedora:41), fedora-previous (fedora:40)
 - rhel8 (rockylinux:8 - a full-RHEL8-like free stand-in), centos-stream, rocky, alma, oracle (EL9 family)
+- rocky-10 (EL10 family; dnf-based, python 3.12 native)
 - opensuse (Tumbleweed), opensuse-leap (Leap 15.6)
 
 ## Conventions

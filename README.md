@@ -31,6 +31,7 @@ Supported distribution images:
 | rocky           | `rockylinux:9`                           |
 | alma            | `almalinux:9`                            |
 | oracle          | `oraclelinux:9`                          |
+| rocky-10        | `rockylinux:10` (EL10; dnf, python 3.12) |
 | opensuse        | `opensuse/tumbleweed`                    |
 | opensuse-leap   | `opensuse/leap:15.6`                     |
 
