@@ -5,9 +5,6 @@
 - name: Load server packages apt variable file
   include_vars: packages_apt.yml
 
-- name: Load server packages swupd variable file
-  include_vars: packages_swupd.yml
-
 - name: Load server neovim variable file
   include_vars: neovim.yml
 
@@ -42,12 +39,6 @@
     state: present
     update_cache: yes
   when: ansible_facts['os_family'] == "Debian"
-
-- name: Install packages swupd
-  swupd:
-    name: "{{ packages_swupd }}"
-    state: present
-  when: ansible_facts['os_family'] == 'ClearLinux'
 
 - name: Install neovim python package
   pip:

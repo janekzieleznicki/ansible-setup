@@ -4,4 +4,3 @@ ansible_centos
 ansible_fedora
 ansible_opensuse
 ansible_opensuse-leap
-ansible_clear

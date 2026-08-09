@@ -7,12 +7,6 @@
         groups: [docker, libvirt]
   
   tasks:
-  - name: install python3 swupd
-    swupd:
-      name: python3-basic
-      state: present
-    when: ansible_facts['os_family'] == 'ClearLinux'
-  
   - name: Create groups
     group:
       name: "{{ item.1 }}"
@@ -36,7 +30,7 @@
       state: present
       append: yes
     with_items: "{{ users }}"
-    when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == 'ClearLinux'
+    when: ansible_facts['os_family'] == "RedHat"
 
   - name: Add user to sudo group on Debian
     user:
