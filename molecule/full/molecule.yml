@@ -37,17 +37,16 @@ platforms:
    pre_build_image: true
 provisioner:
   name: ansible
-  options:
-    skip-tags: virtools
+  options: {}
   inventory:
     host_vars:
       rhel8:
         ansible_python_interpreter: /usr/bin/python3.11
       opensuse-leap:
         ansible_python_interpreter: /usr/bin/python3.11
-  playbooks:
-    prepare: prepare.yml
-    converge: converge.yml
+    playbooks:
+      prepare: prepare.yml
+      converge: converge.yml
 scenario:
   name: full
   test_sequence:
@@ -59,4 +58,3 @@ scenario:
     - cleanup
     - destroy
 verifier:
-  name: ansible

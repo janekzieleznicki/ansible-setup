@@ -1,6 +1,9 @@
 ---
 packages_redhat:
-  - "{{ '@Virtualization' if ansible_facts['distribution'] == 'Fedora' else '@Virtualization Host'}}"
+  - qemu-kvm
+  - libvirt
+  - libvirt-devel
+  - virt-install
   - libvirt-devel
   - libxml2-devel
   - make

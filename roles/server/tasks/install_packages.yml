@@ -14,24 +14,50 @@
 - name: Distro debug
   debug: "msg='Detected os_family: {{ ansible_facts['os_family'] }} and distribution: {{ ansible_facts['distribution'] }} version: {{ ansible_facts['distribution_major_version'] }}'"
 
-- name: Enable the powertools/crb repo so packages are available
-  community.general.dnf_config_manager:
-    name: "{{ 'powertools' if (ansible_facts['distribution'] == 'CentOS' and ansible_facts['distribution_major_version'] == '8') else 'crb' }}"
-    state: enabled
+- name: Install dnf-plugins-core for RedHat family
+  dnf:
+    name: dnf-plugins-core
+    state: present
   when: ansible_facts['os_family'] == "RedHat"
 
-- name: Install the epel repo
-  dnf:
-    name: epel-release
+- name: Enable CRB / Powertools repository for devel packages
+  block:
+    - name: Enable CodeReady Builder on Red Hat Enterprise Linux
+      ansible.builtin.command: subscription-manager repos --enable "codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms"
+      when: ansible_distribution == "RedHat"
+      register: rhel_crb
+      changed_when: "'enabled' in rhel_crb.stdout"
+
+    - name: Enable CodeReady Builder on Oracle Linux
+      ansible.builtin.command: dnf config-manager --set-enabled "ol{{ ansible_distribution_major_version }}_codeready_builder"
+      when: ansible_distribution == "OracleLinux"
+      register: oracle_crb
+      changed_when: oracle_crb.rc == 0
+
+    - name: Enable CRB / Powertools on CentOS, Rocky, or AlmaLinux
+      ansible.builtin.command: "dnf config-manager --set-enabled {{ 'crb' if ansible_distribution_major_version | int >= 9 else 'powertools' }}"
+      when: ansible_distribution in ["CentOS", "Rocky", "AlmaLinux"]
+      register: clone_crb
+      changed_when: clone_crb.rc == 0
+  when: ansible_os_family == "RedHat"
+
+- name: Install the EPEL repository
+  ansible.builtin.dnf:
+    name: >-
+      {{
+        'epel-release' if ansible_facts['distribution'] in ['AlmaLinux', 'Rocky', 'CentOS']
+        else 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-' ~ ansible_facts['distribution_major_version'] ~ '.noarch.rpm'
+      }}
     state: present
     disable_gpg_check: yes
-  when: ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "RedHat"
+  when: 
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] != "Fedora"
 
 - name: Install packages rpm
   package:
     name: "{{ packages_rpm }}"
     state: latest
-  when: ansible_facts['os_family'] == "RedHat" or ansible_facts['os_family'] == "Suse"
 
 - name: Install packages apt
   apt:
@@ -44,7 +70,7 @@
   pip:
     name: "{{ neovim_pip_package }}"
     executable: pip3
-  when: ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == 'ClearLinux'
+  when: ansible_facts['distribution'] == "CentOS"
 
 - name: Install python3-neovim package by package manager
   package:
@@ -53,7 +79,8 @@
     state: latest
   when: ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse"
 
-- file:
+- name: Ensure bin directory exists for zsh_user
+  file:
     path: /home/{{ zsh_user }}/.local/bin
     state: directory
   become: true

@@ -9,31 +9,31 @@
     update_cache: yes
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: Install libssh sources on Fedora
-  shell: >
-    mkdir -p /tmp/libssh && cd /tmp/libssh && rm -rf ./* && \
-    dnf download --source libssh && \ 
-    rpm2cpio libssh-*.src.rpm | cpio -imdV && \
-    tar xf libssh-*.tar.xz && \
-    mkdir build && pushd build && \
-    cmake ../libssh-*/ -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/ && make && \
-    sudo /usr/bin/cp -a lib/libssh* /opt/vagrant/embedded/lib && \
-    rm -rf /tmp/libssh
-  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution'] != 'Fedora'
-  become: yes
+# - name: Install libssh sources on Fedora
+#   shell: >
+#     mkdir -p /tmp/libssh && cd /tmp/libssh && rm -rf ./* && \
+#     dnf download --source libssh && \ 
+#     rpm2cpio libssh-*.src.rpm | cpio -imdV && \
+#     tar xf libssh-*.tar.xz && \
+#     mkdir build && pushd build && \
+#     cmake ../libssh-*/ -DOPENSSL_ROOT_DIR=/opt/vagrant/embedded/ && make && \
+#     sudo /usr/bin/cp -a lib/libssh* /opt/vagrant/embedded/lib && \
+#     rm -rf /tmp/libssh
+#   when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution'] != 'Fedora'
+#   become: yes
 
-- name: Install krb5-libs sources on Fedora
-  shell: >
-    mkdir -p /tmp/krb5-libs && cd /tmp/krb5-libs && rm -rf ./* && \
-    dnf download --source krb5-libs && \
-    rpm2cpio krb5-*.src.rpm | cpio -imdV && \
-    tar xf krb5-*.tar.gz && \
-    cd krb5-*/src && \
-    ./configure && make && \
-    sudo /usr/bin/cp -a lib/crypto/libk5crypto.* /opt/vagrant/embedded/lib/ && \
-    rm -rf /tmp/krb5-libs
-  when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution'] != 'Fedora'
-  become: yes
+# - name: Install krb5-libs sources on Fedora
+#   shell: >
+#     mkdir -p /tmp/krb5-libs && cd /tmp/krb5-libs && rm -rf ./* && \
+#     dnf download --source krb5-libs && \
+#     rpm2cpio krb5-*.src.rpm | cpio -imdV && \
+#     tar xf krb5-*.tar.gz && \
+#     cd krb5-*/src && \
+#     ./configure && make && \
+#     sudo /usr/bin/cp -a lib/crypto/libk5crypto.* /opt/vagrant/embedded/lib/ && \
+#     rm -rf /tmp/krb5-libs
+#   when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution'] != 'Fedora'
+#   become: yes
 
 
 
@@ -62,11 +62,27 @@
   loop_control:
     label: "{{ item }}"
 
-- name: ensure libvirtd service is enabled and active
-  service:
+- name: Ensure libvirt service or sockets are enabled and active (RedHat / Enterprise Linux)
+  ansible.builtin.service:
     name: libvirtd
-    enabled: yes
     state: started
+    enabled: yes
+  when: 
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] != "Fedora"
+
+- name: Ensure libvirt modular sockets are enabled and active (Fedora & openSUSE)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - virtqemud.socket
+    - virtnetworkd.socket
+    - virtstoraged.socket
+  when: 
+    - ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse"
+  ignore_errors: true
 
 - name: Install vagrant-libvirt
   shell: vagrant plugin install vagrant-libvirt
