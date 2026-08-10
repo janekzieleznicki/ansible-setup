@@ -5,7 +5,6 @@
 - `main.yml` - top-level playbook (roles: `server` tagged `dotfiles`, `terraform` tagged `virtools`)
 - `roles/` - Ansible roles (`server`, `terraform`, `nerd-font`)
 - `molecule/` - Molecule scenarios (`smoke`, `full`) + `requirements.yml`
-- `dockerfiles/` - base container image definitions used by the molecule scenarios
 - `Makefile` - orchestration of dependency setup, image builds, and test runs
 
 ## Testing
@@ -20,19 +19,22 @@ Commands:
 
 ```bash
 make deps        # venv + Molecule + galaxy collections
-make images      # build the distro container images
 make test-smoke  # molecule test -s smoke
 make test-full   # molecule test -s full
 make converge    # molecule converge -s full (debug against running container)
 ```
 
 Always run `make test-smoke` and `make test-full` before finishing; they must
-pass on all 11 platforms:
+pass on all 8 platforms:
 
-- fedora-newest (fedora:41), fedora-previous (fedora:40)
-- rhel8 (rockylinux:8 - a full-RHEL8-like free stand-in), centos-stream, rocky, alma, oracle (EL9 family)
-- rocky-10, oracle-10 (EL10 family; dnf-based, python 3.12 native)
-- opensuse (Tumbleweed), opensuse-leap (Leap 15.6)
+- fedora-newest (fedora:latest)
+- rhel8 (rockylinux:8)
+- rocky (rockylinux:9)
+- alma (almalinux:latest)
+- rocky-10 (rockylinux/rockylinux:10)
+- oracle-10 (oraclelinux:10)
+- opensuse (opensuse/tumbleweed:latest)
+- opensuse-leap (opensuse/leap:latest)
 
 ## Conventions
 

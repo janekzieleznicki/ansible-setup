@@ -1,8 +1,35 @@
 ---
 - name: Prepare
   hosts: all
-  gather_facts: true
+  gather_facts: false
   tasks:
+    - name: Bootstrap | Install python3 + bindings + sudo + curl + tar via dnf
+      ansible.builtin.shell: |
+        set -e
+        if command -v dnf >/dev/null 2>&1; then
+          if grep -q 'release 8' /etc/os-release; then
+            dnf -y install epel-release
+            dnf -y config-manager --set-enabled powertools
+            dnf -y --allowerasing install python3 python3.11 python3-dnf sudo curl tar
+          else
+            dnf -y --allowerasing install python3 python3-dnf sudo curl tar
+            dnf -y --allowerasing install python3-libdnf5 || true
+          fi
+        fi
+      executable: /bin/sh
+    changed_when: false
+
+    - name: Bootstrap | Install python3 + bindings + sudo + curl + tar via zypper
+      ansible.builtin.shell: |
+        set -e
+        if command -v zypper >/dev/null 2>&1; then
+          if [ -f /etc/os-release ] && grep -q 'VERSION="15' /etc/os-release; then
+            zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar
+          else
+            zypper --non-interactive install python3 python3-rpm sudo curl tar
+          fi
+      executable: /bin/sh
+    changed_when: false
     - name: Ensure python3 is present
       ansible.builtin.raw: python3 --version
       changed_when: false

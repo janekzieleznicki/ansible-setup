@@ -1,0 +1,36 @@
+# Raw bootstrap: install python3 + package-manager python bindings + python3.11
+# (where the molecule inventory forces ansible_python_interpreter=/usr/bin/python3.11)
+# + sudo + curl + tar on minimal upstream images that don't ship them.
+# Uses only `raw` so it works with no Python on the target and before gather_facts.
+
+- name: Bootstrap | Install deps via dnf (RedHat family)
+  ansible.builtin.shell: |
+    set -e
+    if command -v dnf >/dev/null 2>&1; then
+      if grep -q 'release 8' /etc/os-release; then
+        dnf -y install epel-release
+        dnf -y config-manager --set-enabled powertools
+        dnf -y --allowerasing install python3 python3.11 python3-dnf sudo curl tar
+      else
+        dnf -y --allowerasing install python3 python3-dnf sudo curl tar
+        dnf -y --allowerasing install python3-libdnf5 || true
+      fi
+    fi
+  executable: /bin/sh
+  changed_when: false
+
+- name: Bootstrap | Install deps via zypper (SUSE family)
+  ansible.builtin.shell: |
+    set -e
+    if command -v zypper >/dev/null 2>&1; then
+      if [ -f /etc/os-release ] && grep -q 'VERSION="15' /etc/os-release; then
+        zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar
+      else
+        zypper --non-interactive install python3 python3-rpm sudo curl tar
+      fi
+    fi
+  executable: /bin/sh
+  changed_when: false
+
+- name: Bootstrap | Gather facts now that Python is present
+  ansible.builtin.setup:

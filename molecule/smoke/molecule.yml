@@ -4,39 +4,37 @@ dependency:
 driver:
   name: containers
 platforms:
-  - name: fedora-newest
-    image: localhost/molecule-fedora:41
-    pre_build_image: true
-  - name: fedora-previous
-    image: localhost/molecule-fedora:40
-    pre_build_image: true
-  - name: rhel8
-    image: localhost/molecule-el:8
-    pre_build_image: true
-  - name: centos-stream
-    image: localhost/molecule-el:stream9
-    pre_build_image: true
-  - name: rocky
-    image: localhost/molecule-el:rocky-9
-    pre_build_image: true
-  - name: alma
-    image: localhost/molecule-el:alma-9
-    pre_build_image: true
-  - name: oracle
-    image: localhost/molecule-el:oracle-9
-    pre_build_image: true
-  - name: rocky-10
-    image: localhost/molecule-el:rocky-10
-    pre_build_image: true
-  - name: oracle-10
-    image: localhost/molecule-el:oracle-10
-    pre_build_image: true
-  - name: opensuse
-    image: localhost/molecule-suse:tumbleweed
-    pre_build_image: true
-  - name: opensuse-leap
-    image: localhost/molecule-suse:leap-15.6
-    pre_build_image: true
+ - name: fedora-newest
+   image: fedora:latest
+   pre_build_image: true
+
+ - name: rhel8
+   image: rockylinux:8
+   pre_build_image: true
+
+ - name: rocky
+   image: rockylinux:9
+   pre_build_image: true
+
+ - name: alma
+   image: almalinux:latest
+   pre_build_image: true
+
+ - name: rocky-10
+   image: rockylinux:10
+   pre_build_image: true
+
+ - name: oracle-10
+   image: oraclelinux:10
+   pre_build_image: true
+
+ - name: opensuse
+   image: opensuse/tumbleweed:latest
+   pre_build_image: true
+
+ - name: opensuse-leap
+   image: opensuse/leap:latest
+   pre_build_image: true
 provisioner:
   name: ansible
   inventory:
