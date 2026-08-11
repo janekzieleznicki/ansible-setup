@@ -1,9 +1,7 @@
 ---
 - hosts: all
   become: yes
-  gather_facts: True
-  vars:
-    user: "{{ ansible_facts['env']['SUDO_USER'] or ansible_facts['user_id'] }}"
+  gather_facts: False
   roles:
-    - { role: server, zsh_user: "{{ user }}", tags: dotfiles }
-    - { role: terraform, username: "{{ user }}", tags: virtools }
+    - { role: server, tags: dotfiles }
+    - { role: terraform, tags: virtools }
