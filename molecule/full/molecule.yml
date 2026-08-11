@@ -41,13 +41,10 @@ platforms:
     image: debian:trixie
     pre_build_image: true
     privileged: true
-    command: /sbin/init
   - name: ubuntu-24.04
     image: ubuntu:24.04
     pre_build_image: true
     privileged: true
-    command: /sbin/init
-
 provisioner:
   name: ansible
   options: {}

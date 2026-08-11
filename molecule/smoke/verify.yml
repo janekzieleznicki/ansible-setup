@@ -11,10 +11,20 @@
     family_extra:
       RedHat: [dnf]
       Suse: [zypper]
+      Debian: [apt]
     expected_packages: "{{ core_packages + family_extra[ansible_facts['os_family']] | default([]) }}"
   tasks:
     - name: Probe package presence in the base image
-      ansible.builtin.command: rpm -q --whatprovides {{ item }}
+      ansible.builtin.command: >
+        {%- if ansible_facts.pkg_mgr == 'apt' %}
+        dpkg -s {{ item }}
+        {%- elif ansible_facts.pkg_mgr in ['dnf', 'yum', 'dnf5'] %}
+        rpm -q --whatprovides {{ item }}
+        {%- elif ansible_facts.pkg_mgr == 'zypper' %}
+        rpm -q --whatprovides {{ item }}
+        {%- else %}
+        echo "Unsupported package manager: {{ ansible_facts.pkg_mgr }}" && exit 1
+        {%- endif %}
       register: pkg_check
       changed_when: false
       failed_when: false
@@ -33,5 +43,5 @@
     - name: Assert package manager is usable
       ansible.builtin.assert:
         that:
-          - ansible_facts.pkg_mgr in ['dnf', 'dnf5', 'yum', 'zypper']
+          - ansible_facts.pkg_mgr in ['dnf', 'dnf5', 'yum', 'zypper', 'apt']
           - ansible_facts.pkg_mgr is defined

@@ -10,7 +10,7 @@ LIMIT_ARGS = $(filter-out $@,$(MAKECMDGOALS))
 # Prevent make from trying to build those as targets
 $(eval $(LIMIT_ARGS):;@:)
 
-.PHONY: deps test test-smoke test-full converge destroy
+.PHONY: deps test test-smoke test-full converge destroy dependency-smoke destroy-smoke create-smoke prepare-smoke verify-smoke dependency-full destroy-full create-full converge-full verify-full cleanup-full
 
 $(VENV):
 	python3 -m venv --system-site-packages $(VENV)
@@ -36,6 +36,37 @@ converge:
 destroy:
 	$(MOLECULE) destroy -s full
 	$(MOLECULE) destroy -s smoke
+dependency-smoke: $(VENV)
+	$(MOLECULE) dependency -s smoke
 
+destroy-smoke: $(VENV)
+	$(MOLECULE) destroy -s smoke
+
+create-smoke: $(VENV)
+	$(MOLECULE) create -s smoke
+
+prepare-smoke: $(VENV)
+	$(MOLECULE) prepare -s smoke $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+
+verify-smoke: $(VENV)
+	$(MOLECULE) verify -s smoke $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+
+dependency-full: $(VENV)
+	$(MOLECULE) dependency -s full
+
+destroy-full: $(VENV)
+	$(MOLECULE) destroy -s full
+
+create-full: $(VENV)
+	$(MOLECULE) create -s full
+
+converge-full: $(VENV)
+	$(MOLECULE) converge -s full $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+
+verify-full: $(VENV)
+	$(MOLECULE) verify -s full $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+
+cleanup-full: $(VENV)
+	$(MOLECULE) cleanup -s full
 clean: destroy
 	rm -rf $(VENV)
