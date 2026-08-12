@@ -3,6 +3,8 @@ dependency:
   name: galaxy
 driver:
   name: podman
+  options:
+    network: slirp4netns
 platforms:
   - name: fedora-newest
     image: quay.io/fedora/fedora-bootc:latest

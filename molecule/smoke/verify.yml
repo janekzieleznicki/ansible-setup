@@ -16,7 +16,9 @@
   tasks:
     - name: Probe package presence in the base image
       ansible.builtin.command: >
-        {%- if ansible_facts.pkg_mgr == 'apt' %}
+        {%- if item == 'python3' %}
+        command -v python3
+        {%- elif ansible_facts.pkg_mgr == 'apt' %}
         dpkg -s {{ item }}
         {%- elif ansible_facts.pkg_mgr in ['dnf', 'yum', 'dnf5'] %}
         rpm -q --whatprovides {{ item }}
@@ -39,8 +41,6 @@
       loop: "{{ pkg_check.results }}"
       loop_control:
         label: "{{ item.item }}"
-
-    - name: Assert package manager is usable
       ansible.builtin.assert:
         that:
           - ansible_facts.pkg_mgr in ['dnf', 'dnf5', 'yum', 'zypper', 'apt']

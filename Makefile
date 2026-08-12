@@ -8,8 +8,12 @@ PODMAN      := podman
 # Capture extra goals (platform names) after the main target
 LIMIT_ARGS = $(filter-out $@,$(MAKECMDGOALS))
 # Prevent make from trying to build those as targets
-$(eval $(LIMIT_ARGS):;@:)
-
+STANDARD_TARGETS = test-smoke test-full converge destroy dependency-smoke destroy-smoke create-smoke prepare-smoke verify-smoke dependency-full destroy-full create-full converge-full verify-full cleanup-full
+ifneq ($(LIMIT_ARGS),)
+  ifeq ($(filter $(LIMIT_ARGS),$(STANDARD_TARGETS)),)
+    $(eval $(LIMIT_ARGS):;@:)
+  endif
+endif
 .PHONY: deps test test-smoke test-full converge destroy dependency-smoke destroy-smoke create-smoke prepare-smoke verify-smoke dependency-full destroy-full create-full converge-full verify-full cleanup-full
 
 $(VENV):
