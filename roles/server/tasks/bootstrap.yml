@@ -4,33 +4,54 @@
 # Uses only `raw` so it works with no Python on the target and before gather_facts.
 
 - name: Bootstrap | Install deps via dnf (RedHat family)
-  ansible.builtin.shell: |
-    set -e
-    if command -v dnf >/dev/null 2>&1; then
-      if grep -q 'PLATFORM_ID="platform:el8"' /etc/os-release; then
-        dnf -y install epel-release
-        dnf -y config-manager --set-enabled powertools
-        dnf -y --allowerasing install python3 python3.11 python3-dnf sudo curl tar
-      else
-        dnf -y --allowerasing install python3 python3-dnf sudo curl tar
-        dnf -y --allowerasing install python3-libdnf5 || true
+  ansible.builtin.raw: |
+    /bin/sh -c '
+      if command -v dnf >/dev/null 2>&1; then
+        if grep -q platform:el8 /etc/os-release; then
+          dnf -y install epel-release
+          dnf -y config-manager --set-enabled powertools
+          dnf -y --allowerasing install python3.11 python3-dnf sudo curl tar gnupg wget
+          ln -sf /usr/bin/python3.11 /usr/bin/python3 || true
+        else
+          dnf -y --allowerasing install python3 python3-dnf sudo curl tar gnupg wget
+          dnf -y --allowerasing install python3-libdnf5 || true
+        fi
       fi
-    fi
-  executable: /bin/bash
+    '
+  become: no
   changed_when: false
 
 - name: Bootstrap | Install deps via zypper (SUSE family)
-  ansible.builtin.shell: |
-    set -e
-    if command -v zypper >/dev/null 2>&1; then
-      if [ -f /etc/os-release ] && grep -q 'VERSION="15' /etc/os-release; then
-        zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar
-      else
-        zypper --non-interactive install python3 python3-rpm sudo curl tar
+  ansible.builtin.raw: |
+    /bin/sh -c '
+      if command -v zypper >/dev/null 2>&1; then
+        if [ -f /etc/os-release ] && grep -q "VERSION_ID=\"1[56]\"" /etc/os-release; then
+          zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar gnupg wget
+        else
+          zypper --non-interactive install python3 python3-rpm sudo curl tar gnupg wget
+        fi
       fi
-    fi
-  executable: /bin/bash
+    '
+  become: no
   changed_when: false
+- name: Bootstrap | Install deps via apt (Debian family)
+  ansible.builtin.raw: |
+    /bin/sh -c '
+      if command -v apt >/dev/null 2>&1; then
+        apt-get update -y
+        apt-get install -y python3 sudo curl tar gnupg wget apt-utils
+      fi
+    '
+  become: no
+  changed_when: false
+
+- name: Bootstrap | Verify python interpreter present
+  ansible.builtin.raw: |
+    /bin/sh -c 'command -v {{ ansible_python_interpreter | default("/usr/bin/python3") }}'
+  become: no
+  changed_when: false
+
 
 - name: Bootstrap | Gather facts now that Python is present
   ansible.builtin.setup:
+  become: no

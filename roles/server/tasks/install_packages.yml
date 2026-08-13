@@ -18,6 +18,7 @@
   dnf:
     name: dnf-plugins-core
     state: present
+  ignore_errors: yes
   when: ansible_facts['os_family'] == "RedHat"
 
 - name: Enable CRB / Powertools repository for devel packages
@@ -41,23 +42,26 @@
       changed_when: clone_crb.rc == 0
   when: ansible_os_family == "RedHat"
 
-- name: Install the EPEL repository
+- name: Install EPEL repository for RHEL derivatives (skip Fedora and OracleLinux)
   ansible.builtin.dnf:
-    name: >-
-      {{
-        'epel-release' if ansible_facts['distribution'] in ['AlmaLinux', 'Rocky', 'CentOS']
-        else 'https://dl.fedoraproject.org/pub/epel/epel-release-latest-' ~ ansible_facts['distribution_major_version'] ~ '.noarch.rpm'
-      }}
+    name: epel-release
     state: present
     disable_gpg_check: yes
-  when: 
+  when:
     - ansible_facts['os_family'] == "RedHat"
-    - ansible_facts['distribution'] != "Fedora"
-
+    - ansible_facts['distribution'] not in ["Fedora", "Fedora Linux", "OracleLinux"]
 - name: Install packages rpm
   package:
     name: "{{ packages_rpm }}"
     state: latest
+  ignore_errors: yes
+  when: ansible_facts['os_family'] == "RedHat"
+- name: Install apt-utils for Debian family
+  apt:
+    name: apt-utils
+    state: present
+    update_cache: yes
+  when: ansible_facts['os_family'] == "Debian"
 
 - name: Install packages apt
   apt:
@@ -77,26 +81,30 @@
     name:
       - python3-neovim
     state: latest
+  ignore_errors: yes
   when: ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse"
 
 - name: Ensure bin directory exists for zsh_user
   file:
     path: /home/{{ zsh_user }}/.local/bin
     state: directory
-  become: true
+  become: no
   become_user: "{{ zsh_user }}"
+
+
 
 - name: Download neovim appimage
   get_url:
     url: "{{ neovim_appimage_url }}"
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
     mode: "0755"
-  become: true
-  become_user: "{{ zsh_user }}"
+  ignore_errors: yes
+  become: no
 
 - name: Install fonts
-  with_items: "{{ fonts }}"
+  loop: "{{ fonts }}"
   include_role:
     name: nerd-font
   vars:
     font: "{{ item }}"
+  ignore_errors: yes
