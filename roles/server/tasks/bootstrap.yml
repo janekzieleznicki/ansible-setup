@@ -1,57 +1,163 @@
+---
 # Raw bootstrap: install python3 + package-manager python bindings + python3.11
 # (where the molecule inventory forces ansible_python_interpreter=/usr/bin/python3.11)
 # + sudo + curl + tar on minimal upstream images that don't ship them.
 # Uses only `raw` so it works with no Python on the target and before gather_facts.
 
-- name: Bootstrap | Install deps via dnf (RedHat family)
+- name: Bootstrap | Fix DNF repo for Fedora
   ansible.builtin.raw: |
     /bin/sh -c '
       if command -v dnf >/dev/null 2>&1; then
-        if grep -q platform:el8 /etc/os-release; then
-          dnf -y install epel-release
-          dnf -y config-manager --set-enabled powertools
-          dnf -y --allowerasing install python3.11 python3-dnf sudo curl tar gnupg wget
-          ln -sf /usr/bin/python3.11 /usr/bin/python3 || true
-        else
-          dnf -y --allowerasing install python3 python3-dnf sudo curl tar gnupg wget
-          dnf -y --allowerasing install python3-libdnf5 || true
+        if grep -q "^ID=fedora" /etc/os-release; then
+          # Fix DNS resolution for Fedora containers
+          echo "nameserver 8.8.8.8" > /etc/resolv.conf
+          echo "nameserver 8.8.4.4" >> /etc/resolv.conf
+          cat /etc/resolv.conf
+          # Test DNS resolution
+          getent hosts mirrors.fedoraproject.org || echo "DNS test failed, continuing anyway"
+          # Install fedora-release to set correct version
+          timeout 300 dnf -y install fedora-release || {
+            echo "Failed to install fedora-release"
+            exit 1
+          }
+          # Get the version ID
+          . /etc/os-release
+          # Ensure releasever is set correctly
+          mkdir -p /etc/yum/vars
+          echo "$VERSION_ID" > /etc/yum/vars/releasever
+          # Reinstall fedora-repos to get correct repo files for this release
+          timeout 300 dnf -y reinstall fedora-repos || {
+            echo "Failed to reinstall fedora-repos"
+            exit 1
+          }
+          # Clean and update cache with the correct releasever
+          timeout 300 dnf -y clean all || {
+            echo "Failed to clean dnf cache"
+            exit 1
+          }
+          timeout 300 dnf -y --releasever=$VERSION_ID makecache || {
+            echo "Failed to makecache with releasever"
+            exit 1
+          }
         fi
       fi
     '
   become: no
   changed_when: false
+  timeout: 1200
+
+- name: Bootstrap | Install deps via dnf (RedHat family)
+  ansible.builtin.raw: |
+    /bin/sh -c '
+      if command -v dnf >/dev/null 2>&1; then
+        . /etc/os-release
+        if [ "$ID" = "fedora" ] || [ "$ID" = "rhel" ] || [ "$ID" = "centos" ] || [ "$ID" = "rocky" ] || [ "$ID" = "almalinux" ]; then
+          # For Fedora and RHEL-like distributions
+          if ! rpm -q python3 python3-dnf git >/dev/null 2>&1; then
+            timeout 120 dnf -y install python3 python3-dnf git || {
+              echo "Failed to install python3 and python3-dnf and git, trying with --best --allowerasing"
+              timeout 120 dnf -y install --best --allowerasing python3 python3-dnf git
+            }
+          fi
+          if ! rpm -q sudo curl tar gnupg wget >/dev/null 2>&1; then
+            timeout 120 dnf -y install sudo curl tar gnupg wget || {
+              echo "Failed to install sudo, curl, tar, gnupg wget, trying with --best --allowerasing"
+              timeout 120 dnf -y install --best --allowerasing sudo curl tar gnupg wget
+            }
+          fi
+          # Ensure python alternatives point to python3
+          alternatives --set python /usr/bin/python3 2>/dev/null || true
+        elif [ "$ID" = "ol" ] || [ "$ID" = "amzn" ]; then
+          # Oracle Linux and Amazon Linux
+          if ! rpm -q python3 python3-dnf git >/dev/null 2>&1; then
+            timeout 120 dnf -y install python3 python3-dnf git || {
+              echo "Failed to install python3 and python3-dnf and git, trying with --best --allowerasing"
+              timeout 120 dnf -y install --best --allowerasing python3 python3-dnf git
+            }
+          fi
+          if ! rpm -q sudo curl tar gnupg wget >/dev/null 2>&1; then
+            timeout 120 dnf -y install sudo curl tar gnupg wget || {
+              echo "Failed to install sudo, curl, tar, gnupg wget, trying with --best --allowerasing"
+              timeout 120 dnf -y install --best --allowerasing sudo curl tar gnupg wget
+            }
+          fi
+          alternatives --set python /usr/bin/python3 2>/dev/null || true
+        elif grep -q platform:el8 /etc/os-release; then
+          # EL8 (CentOS Stream 8, RHEL 8, etc.)
+          if ! rpm -q epel-release >/dev/null 2>&1; then
+            dnf -y install epel-release
+          fi
+          dnf -y config-manager --set-enabled powertools
+          if ! rpm -q python3.11 python3-dnf sudo curl tar gnupg wget git >/dev/null 2>&1; then
+            timeout 120 dnf -y install python3.11 python3-dnf sudo curl tar gnupg wget git || {
+              echo "Failed to install packages on EL8, trying with --best --allowerasing"
+              timeout 120 dnf -y install --best --allowerasing python3.11 python3-dnf sudo curl tar gnupg wget git
+            }
+          fi
+          ln -sf /usr/bin/python3.11 /usr/bin/python3 || true
+        else
+          # Other RedHat family (assuming dnf)
+          if ! rpm -q python3 python3-dnf sudo curl tar gnupg wget >/dev/null 2>&1; then
+            timeout 120 dnf -y install python3 python3-dnf sudo curl tar gnupg wget || {
+              echo "Failed to install packages on other RedHat, trying with --best --allowerasing"
+              timeout 120 dnf -y install --best --allowerasing python3 python3-dnf sudo curl tar gnupg wget
+            }
+          fi
+          dnf -y install python3-libdnf5 || true
+        fi
+      else
+        echo "dnf not found, skipping dnf install"
+        exit 0
+      fi
+    '
+  become: no
+  changed_when: false
+  timeout: 1200
 
 - name: Bootstrap | Install deps via zypper (SUSE family)
   ansible.builtin.raw: |
     /bin/sh -c '
       if command -v zypper >/dev/null 2>&1; then
         if [ -f /etc/os-release ] && grep -q "VERSION_ID=\"1[56]\"" /etc/os-release; then
-          zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar gnupg wget
+          if ! rpm -q python3 python311 python311-rpm python3-rpm >/dev/null 2>&1; then
+            zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar gnupg wget unzip
+          else
+            echo "python3 packages already installed"
+          fi
         else
-          zypper --non-interactive install python3 python3-rpm sudo curl tar gnupg wget
+          if ! rpm -q python3 python3-rpm >/dev/null 2>&1; then
+            zypper --non-interactive install python3 python3-rpm sudo curl tar gnupg wget unzip
+          else
+            echo "python3 package already installed"
+          fi
         fi
       fi
     '
   become: no
   changed_when: false
+  timeout: 1200
+
 - name: Bootstrap | Install deps via apt (Debian family)
   ansible.builtin.raw: |
     /bin/sh -c '
       if command -v apt >/dev/null 2>&1; then
         apt-get update -y
-        apt-get install -y python3 sudo curl tar gnupg wget apt-utils
+        if ! dpkg -l python3 sudo curl tar gnupg wget apt-utils >/dev/null 2>&1; then
+          apt-get install -y python3 sudo curl tar gnupg wget apt-utils
+        else
+          echo "python3 and related packages already installed"
+        fi
+      else
+        echo "apt not present, skipping"
       fi
     '
   become: no
   changed_when: false
+  timeout: 1200
 
 - name: Bootstrap | Verify python interpreter present
   ansible.builtin.raw: |
-    /bin/sh -c 'command -v {{ ansible_python_interpreter | default("/usr/bin/python3") }}'
-  become: no
+    {{ ansible_python_interpreter | default('/usr/bin/python3') }} --version
+  become: false
   changed_when: false
-
-
-- name: Bootstrap | Gather facts now that Python is present
-  ansible.builtin.setup:
-  become: no
+  timeout: 1200

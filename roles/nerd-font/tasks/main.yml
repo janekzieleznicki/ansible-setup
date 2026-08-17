@@ -13,9 +13,19 @@
   register: font_exists
   ignore_errors: yes
 
+- name: Ensure archive utilities are installed
+  ansible.builtin.package:
+    name:
+      - unzip
+      - tar
+    state: present
+  become: true
+
 - name: "Download {{ font }}"
   when: font_exists is failed
   ansible.builtin.unarchive:
     src: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.2/{{ font }}.zip
     dest: "/home/{{ zsh_user }}/.local/share/fonts"
     remote_src: yes
+  retries: 5
+  delay: 20

@@ -8,11 +8,13 @@ packages_rpm:
   - gcc-c++
   - cmake
   - golang
-  - fuse
-  - nodejs
+  - fuse3
+  - nodejs22
   - python3
   - python3-pip
   - python3-setuptools
   - python3-devel
+  - python3-neovim
   - unzip
   - fontconfig-devel
+  - alacritty

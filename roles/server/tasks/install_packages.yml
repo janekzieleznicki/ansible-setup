@@ -11,15 +11,109 @@
 - name: Load server fonts variable file
   include_vars: fonts.yml
 
+- name: Load server packages suse variable file
+  include_vars: packages_suse.yml
+
 - name: Distro debug
-  debug: "msg='Detected os_family: {{ ansible_facts['os_family'] }} and distribution: {{ ansible_facts['distribution'] }} version: {{ ansible_facts['distribution_major_version'] }}'"
+  ansible.builtin.debug:
+    msg: "Detected os_family: {{ ansible_os_family | default('unknown') }} and distribution: {{ ansible_distribution | default('unknown') }} version: {{ ansible_distribution_major_version | default('unknown') }}"
+
+- name: Clean dnf lock files
+  ansible.builtin.raw: |
+    rm -f /var/run/dnf.pid /var/lib/dnf/lock
+  ignore_errors: yes
+
+- name: Update DNF cache
+  ansible.builtin.command: dnf makecache
+  ignore_errors: yes
 
 - name: Install dnf-plugins-core for RedHat family
-  dnf:
-    name: dnf-plugins-core
+  ansible.builtin.raw: |
+    /bin/sh -c '
+      if command -v dnf >/dev/null 2>&1; then
+        timeout 120 dnf -y install dnf-plugins-core || {
+          echo "Failed to install dnf-plugins-core"
+          exit 1
+        }
+      else
+        echo "dnf not found, skipping"
+        exit 0
+      fi
+    '
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat"
+  timeout: 120
+
+- name: Install RPM packages (RedHat family) - chunk 1
+  ansible.builtin.dnf:
+    name:
+      - zsh
+      - acl
+      - git
+      - curl
+      - gcc
     state: present
   ignore_errors: yes
-  when: ansible_facts['os_family'] == "RedHat"
+  when: ansible_os_family == "RedHat"
+  timeout: 600
+
+- name: Install RPM packages (RedHat family) - chunk 2
+  ansible.builtin.dnf:
+    name:
+      - gcc-c++
+      - cmake
+      - golang
+      - fuse3
+      - nodejs22
+    state: present
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat"
+  timeout: 600
+
+- name: Install RPM packages (RedHat family) - chunk 3
+  ansible.builtin.dnf:
+    name:
+      - python3
+      - python3-pip
+      - python3-setuptools
+      - python3-devel
+      - python3-neovim
+    state: present
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat"
+  timeout: 600
+
+- name: Install RPM packages (RedHat family) - chunk 4
+  ansible.builtin.dnf:
+    name:
+      - unzip
+      - fontconfig-devel
+      - alacritty
+    state: present
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat"
+  timeout: 600
+
+- name: Install go for Fedora
+  ansible.builtin.raw: |
+    /bin/sh -c '
+      if command -v dnf >/dev/null 2>&1; then
+        if rpm -q golang >/dev/null 2>&1; then
+          echo "golang is already installed"
+          exit 0
+        fi
+        timeout 1800 dnf -y install golang --setopt=install_weak_deps=false || {
+          echo "Failed to install golang, trying with --best --allowerasing"
+          timeout 1800 dnf -y install --best --allowerasing golang --setopt=install_weak_deps=false
+        }
+      else
+        echo "dnf not found, skipping"
+        exit 0
+      fi
+    '
+  become: no
+  changed_when: false
+  when: ansible_distribution == "Fedora"
 
 - name: Enable CRB / Powertools repository for devel packages
   block:
@@ -28,19 +122,22 @@
       when: ansible_distribution == "RedHat"
       register: rhel_crb
       changed_when: "'enabled' in rhel_crb.stdout"
+      timeout: 120
 
     - name: Enable CodeReady Builder on Oracle Linux
       ansible.builtin.command: dnf config-manager --set-enabled "ol{{ ansible_distribution_major_version }}_codeready_builder"
       when: ansible_distribution == "OracleLinux"
       register: oracle_crb
       changed_when: oracle_crb.rc == 0
+      timeout: 120
 
     - name: Enable CRB / Powertools on CentOS, Rocky, or AlmaLinux
       ansible.builtin.command: "dnf config-manager --set-enabled {{ 'crb' if ansible_distribution_major_version | int >= 9 else 'powertools' }}"
       when: ansible_distribution in ["CentOS", "Rocky", "AlmaLinux"]
       register: clone_crb
       changed_when: clone_crb.rc == 0
-  when: ansible_os_family == "RedHat"
+      timeout: 120
+  when: ansible_os_family == "RedHat" and ansible_distribution != "Fedora"
 
 - name: Install EPEL repository for RHEL derivatives (skip Fedora and OracleLinux)
   ansible.builtin.dnf:
@@ -48,63 +145,57 @@
     state: present
     disable_gpg_check: yes
   when:
-    - ansible_facts['os_family'] == "RedHat"
-    - ansible_facts['distribution'] not in ["Fedora", "Fedora Linux", "OracleLinux"]
-- name: Install packages rpm
-  package:
-    name: "{{ packages_rpm }}"
-    state: latest
-  ignore_errors: yes
-  when: ansible_facts['os_family'] == "RedHat"
+    - ansible_os_family == "RedHat"
+    - ansible_distribution not in ["Fedora", "Fedora Linux", "OracleLinux"]
+
 - name: Install apt-utils for Debian family
-  apt:
+  ansible.builtin.apt:
     name: apt-utils
     state: present
     update_cache: yes
-  when: ansible_facts['os_family'] == "Debian"
+  when: ansible_os_family == "Debian"
 
 - name: Install packages apt
-  apt:
+  ansible.builtin.apt:
     name: "{{ packages_apt }}"
     state: present
     update_cache: yes
-  when: ansible_facts['os_family'] == "Debian"
+  when: ansible_os_family == "Debian"
 
 - name: Install neovim python package
-  pip:
+  ansible.builtin.pip:
     name: "{{ neovim_pip_package }}"
     executable: pip3
   when: ansible_facts['distribution'] == "CentOS"
 
-- name: Install python3-neovim package by package manager
-  package:
-    name:
-      - python3-neovim
-    state: latest
-  ignore_errors: yes
-  when: ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse"
-
 - name: Ensure bin directory exists for zsh_user
-  file:
+  ansible.builtin.file:
     path: /home/{{ zsh_user }}/.local/bin
     state: directory
   become: no
   become_user: "{{ zsh_user }}"
 
-
-
 - name: Download neovim appimage
-  get_url:
+  ansible.builtin.get_url:
     url: "{{ neovim_appimage_url }}"
     dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
     mode: "0755"
+    force: no
   ignore_errors: yes
   become: no
+  timeout: 600
 
 - name: Install fonts
-  loop: "{{ fonts }}"
   include_role:
     name: nerd-font
   vars:
     font: "{{ item }}"
   ignore_errors: yes
+  loop: "{{ fonts }}"
+  when: ansible_distribution != "Fedora"
+
+- name: Install packages suse
+  ansible.builtin.zypper:
+    name: "{{ packages_suse }}"
+    state: present
+  when: ansible_os_family == "Suse"

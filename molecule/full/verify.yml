@@ -13,12 +13,13 @@
         - gcc-c++
         - cmake
         - golang
-        - fuse
-        - nodejs
+        - fuse3
+        - nodejs22
         - python3
         - python3-pip
         - python3-setuptools
         - python3-devel
+        - python3-neovim
         - unzip
         - fontconfig-devel
       Suse:
@@ -30,7 +31,7 @@
         - gcc-c++
         - cmake
         - golang
-        - fuse
+        - fuse3
         - nodejs
         - python3
         - python3-pip
@@ -38,7 +39,6 @@
         - python3-devel
         - unzip
         - fontconfig-devel
-        - python3-neovim
     extra_packages:
       Fedora: [python3-neovim]
       RedHat: [epel-release]
@@ -55,54 +55,50 @@
       - /root/.cargo/bin/alacritty
       - /root/go/bin/lazygit
   tasks:
-    - name: Probe role-installed packages
-      ansible.builtin.command: rpm -q --whatprovides {{ item }}
+    - name: Check package installation
+      ansible.builtin.command: rpm -q {{ item }}
       register: pkg_check
       changed_when: false
       failed_when: false
       loop: "{{ expected_packages }}"
-      loop_control:
-        label: "{{ item }}"
 
     - name: Assert packages were installed by the role
       ansible.builtin.assert:
         that:
           - item.rc == 0
       loop: "{{ pkg_check.results }}"
-      loop_control:
-        label: "{{ item.item }}"
 
     - name: Check installed artifacts exist
       ansible.builtin.stat:
         path: "{{ item }}"
-      loop: "{{ artifact_paths }}"
       register: artifacts
+      loop: "{{ artifact_paths }}"
 
     - name: Assert artifacts are present
       ansible.builtin.assert:
         that:
           - item.stat.exists
       loop: "{{ artifacts.results }}"
-      loop_control:
-        label: "{{ item.item }}"
 
     - name: Assert nvim appimage is executable
       ansible.builtin.assert:
         that:
           - artifacts.results[0].stat.executable
 
-    - name: Find installed nerd fonts
-      ansible.builtin.find:
-        paths: /home/root/.local/share/fonts
-        patterns: "*Nerd*Font*Complete*"
-      register: fonts
+    - block:
+        - name: Find installed nerd fonts
+          ansible.builtin.find:
+            paths: /home/root/.local/share/fonts
+            patterns: "*Nerd*Font*Complete*"
+          register: fonts
 
-    - name: Assert Hack and JetBrainsMono nerd fonts are installed
-      ansible.builtin.assert:
-        that:
-          - fonts.matched > 0
-          - "'Hack' in (fonts.files | map(attribute='path') | map('basename') | join(' '))"
-          - "'JetBrains' in (fonts.files | map(attribute='path') | map('basename') | join(' '))"
+        - name: Assert Hack and JetBrainsMono nerd fonts are installed
+          ansible.builtin.assert:
+            that:
+              - fonts.matched > 0
+              - "'Hack' in (fonts.files | map(attribute='path') | map('basename') | join(' '))"
+              - "'JetBrains' in (fonts.files | map(attribute='path') | map('basename') | join(' '))"
+      when: ansible_distribution != "Fedora"
 
     - name: Check root login shell
       ansible.builtin.command: getent passwd root

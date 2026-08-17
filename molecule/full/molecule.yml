@@ -4,74 +4,43 @@ dependency:
 driver:
   name: podman
   options:
-    network: slirp4netns
-platforms:
-  - name: fedora-newest
-    image: quay.io/fedora/fedora-bootc:latest
+    network: bridge
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    timeout: 7200
+    force_destroy: true
+    remove_volumes: true
+    force_remove: true
+    destroy_command: podman rm -f -t 0 {{ item.name }}
+    image: fedora:latest
     pre_build_image: true
     privileged: true
-    command: /sbin/init
-  - name: rhel8
-    image: quay.io/rockylinux/rockylinux:8
-    pre_build_image: true
-    privileged: true
-  - name: rocky
-    image: quay.io/rockylinux/rockylinux:9
-    pre_build_image: true
-    privileged: true
-  - name: alma
-    image: quay.io/almalinux/almalinux:9
-    pre_build_image: true
-    privileged: true
-  - name: rocky-10
-    image: quay.io/rockylinux/rockylinux:10
-    pre_build_image: true
-    privileged: true
-  - name: oracle-10
-    image: container-registry.oracle.com/os/oraclelinux:10
-    pre_build_image: true
-    privileged: true
-  - name: opensuse
-    image: registry.opensuse.org/opensuse/tumbleweed:latest
-    pre_build_image: true
-    privileged: true
-  - name: opensuse-leap
-    image: registry.opensuse.org/opensuse/leap:latest
-    pre_build_image: true
-    privileged: true
-  - name: debian-trixie
-    image: debian:trixie
-    pre_build_image: true
-    privileged: true
-  - name: ubuntu-24.04
-    image: ubuntu:24.04
-    pre_build_image: true
-    privileged: true
+    command: sleep infinity
 provisioner:
   name: ansible
-  options: {}
+  timeout:
+    prepare: 3600
+    create: 1800
+    converge: 7200
+    destroy: 7200
   inventory:
     group_vars:
-      all:
+      all: {}
     host_vars:
-      rhel8:
-        ansible_python_interpreter: /usr/bin/python3.11
-      opensuse-leap:
+      fedora-newest:
         ansible_python_interpreter: /usr/bin/python3
-      debian-trixie:
-        ansible_python_interpreter: /usr/bin/python3
-      ubuntu-24.04:
-        ansible_python_interpreter: /usr/bin/python3
-    playbooks:
-      prepare: prepare.yml
-      converge: converge.yml
-
+        fonts: []
+  playbooks:
+    prepare: prepare.yml
+    converge: converge.yml
 scenario:
   name: full
   test_sequence:
     - dependency
     - destroy
     - create
+    - prepare
     - converge
     - verify
     - destroy

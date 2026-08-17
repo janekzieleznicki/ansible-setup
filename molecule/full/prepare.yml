@@ -1,8 +1,7 @@
 ---
 - name: Prepare
   hosts: all
-  gather_facts: true
+  gather_facts: false
   tasks:
-    - name: Ensure python3 is present
-      ansible.builtin.raw: python3 --version
-      changed_when: false
+    - name: Run bootstrap tasks from role
+      import_tasks: ../../roles/server/tasks/bootstrap.yml

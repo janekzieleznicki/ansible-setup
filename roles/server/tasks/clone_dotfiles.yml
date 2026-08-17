@@ -1,11 +1,15 @@
 ---
-
 - name: dotfiles git clone for {{ zsh_user }} using ssh
   git:
     repo: git@github.com:janekzieleznicki/dotfiles.git
     dest: /home/{{ zsh_user }}/.dotfiles
     force: yes
     version: "{{ dotfiles_version }}"
+    accept_hostkey: yes
+    depth: 1
+  environment:
+    GIT_HTTP_LOW_SPEED_LIMIT: 1000
+    GIT_HTTP_LOW_SPEED_TIME: 30
   become: true
   become_user: "{{ zsh_user }}"
   register: ssh_github
@@ -25,7 +29,7 @@
   ignore_errors: yes
   vars:
     allow_world_readable_tmpfiles: true
-    
+
 - name: Create ~/.config/alacritty directory
   file:
     path: ~/.config/alacritty
@@ -35,6 +39,7 @@
 
 - name: dotfiles install for {{ zsh_user }}
   command: /home/{{ zsh_user }}/.dotfiles/install
+  timeout: 3600
   become: true
   become_user: "{{ zsh_user }}"
 
@@ -44,26 +49,47 @@
     name: "{{ zsh_user }}"
     shell: /bin/zsh
 
-- name: Rustup install
-  shell: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path
+- name: Download rustup script
+  ansible.builtin.get_url:
+    url: https://sh.rustup.rs
+    dest: /tmp/rustup.sh
+    mode: '0755'
   become: true
   become_user: "{{ zsh_user }}"
 
-- name: Go Install
-  command: go install {{ item }}
-  environment:
-    GOTOOLCHAIN: "auto"
-    GOSUMDB: "sum.golang.org"
+- name: Run rustup installer
+  ansible.builtin.command: /tmp/rustup.sh -y --no-modify-path
+  timeout: 600
   become: true
   become_user: "{{ zsh_user }}"
-  with_items: 
-    - github.com/jesseduffield/lazygit@latest
-  loop_control:
-    label: "{{ item }}"
+
+- name: Install lazygit via go
+  ansible.builtin.raw: |
+    /bin/sh -c '
+      if command -v go >/dev/null 2>&1; then
+        timeout 300 go install github.com/jesseduffield/lazygit@latest || {
+          echo "Failed to install lazygit via go"
+          exit 1
+        }
+      else
+        echo "go not found, skipping"
+        exit 0
+      fi
+    '
+  ignore_errors: yes
+  become: true
+  become_user: "{{ zsh_user }}"
+
+- name: Create ~/.local/share/applications directory
+  file:
+    path: ~/.local/share/applications
+    state: directory
+  become: true
+  become_user: "{{ zsh_user }}"
 
 - name: Create alacritty desktop entry
   ansible.builtin.template:
-    src: alacritty.desktop 
+    src: alacritty.desktop
     dest: ~/.local/share/applications/alacritty.desktop
   ignore_errors: true
   become: true

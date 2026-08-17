@@ -1,2 +1,6 @@
 ---
-- import_playbook: ../../main.yml
+- hosts: all
+  become: no
+  gather_facts: true
+  roles:
+    - { role: server, tags: dotfiles }
