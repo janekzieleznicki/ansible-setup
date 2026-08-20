@@ -51,7 +51,20 @@
     /bin/sh -c '
       if command -v dnf >/dev/null 2>&1; then
         . /etc/os-release
-        if [ "$ID" = "fedora" ] || [ "$ID" = "rhel" ] || [ "$ID" = "centos" ] || [ "$ID" = "rocky" ] || [ "$ID" = "almalinux" ]; then
+        if grep -q platform:el8 /etc/os-release; then
+          # EL8 (CentOS Stream 8, RHEL 8, etc.)
+          if ! rpm -q epel-release >/dev/null 2>&1; then
+            dnf -y install epel-release
+          fi
+          dnf -y config-manager --set-enabled powertools
+          if ! rpm -q python3.11 python3-dnf sudo curl tar gnupg wget git >/dev/null 2>&1; then
+            timeout 120 dnf -y install python3.11 python3-dnf sudo curl tar gnupg wget git || {
+              echo "Failed to install packages on EL8, trying with --best --allowerasing"
+              timeout 120 dnf -y install --best --allowerasing python3.11 python3-dnf sudo curl tar gnupg wget git
+            }
+          fi
+          ln -sf /usr/bin/python3.11 /usr/bin/python3 || true
+        elif [ "$ID" = "fedora" ] || [ "$ID" = "rhel" ] || [ "$ID" = "centos" ] || [ "$ID" = "rocky" ] || [ "$ID" = "almalinux" ]; then
           # For Fedora and RHEL-like distributions
           if ! rpm -q python3 python3-dnf git >/dev/null 2>&1; then
             timeout 120 dnf -y install python3 python3-dnf git || {
@@ -82,19 +95,6 @@
             }
           fi
           alternatives --set python /usr/bin/python3 2>/dev/null || true
-        elif grep -q platform:el8 /etc/os-release; then
-          # EL8 (CentOS Stream 8, RHEL 8, etc.)
-          if ! rpm -q epel-release >/dev/null 2>&1; then
-            dnf -y install epel-release
-          fi
-          dnf -y config-manager --set-enabled powertools
-          if ! rpm -q python3.11 python3-dnf sudo curl tar gnupg wget git >/dev/null 2>&1; then
-            timeout 120 dnf -y install python3.11 python3-dnf sudo curl tar gnupg wget git || {
-              echo "Failed to install packages on EL8, trying with --best --allowerasing"
-              timeout 120 dnf -y install --best --allowerasing python3.11 python3-dnf sudo curl tar gnupg wget git
-            }
-          fi
-          ln -sf /usr/bin/python3.11 /usr/bin/python3 || true
         else
           # Other RedHat family (assuming dnf)
           if ! rpm -q python3 python3-dnf sudo curl tar gnupg wget >/dev/null 2>&1; then
@@ -118,7 +118,7 @@
   ansible.builtin.raw: |
     /bin/sh -c '
       if command -v zypper >/dev/null 2>&1; then
-        if [ -f /etc/os-release ] && grep -q "VERSION_ID=\"1[56]\"" /etc/os-release; then
+        if [ -f /etc/os-release ] && grep -Eq "VERSION_ID=\"1[56]" /etc/os-release; then
           if ! rpm -q python3 python311 python311-rpm python3-rpm >/dev/null 2>&1; then
             zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar gnupg wget unzip
           else

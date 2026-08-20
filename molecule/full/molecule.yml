@@ -3,20 +3,47 @@ dependency:
   name: galaxy
 driver:
   name: podman
-  options:
-    network: bridge
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    timeout: 7200
-    force_destroy: true
-    remove_volumes: true
-    force_remove: true
-    destroy_command: podman rm -f -t 0 {{ item.name }}
+platforms:
+  - name: fedora-newest
     image: fedora:latest
     pre_build_image: true
     privileged: true
     command: sleep infinity
+
+  - name: rhel8
+    image: quay.io/rockylinux/rockylinux:8
+    pre_build_image: true
+    privileged: true
+
+  - name: rocky
+    image: quay.io/rockylinux/rockylinux:9
+    pre_build_image: true
+    privileged: true
+
+  - name: alma
+    image: quay.io/almalinux/almalinux:9
+    pre_build_image: true
+    privileged: true
+
+  - name: rocky-10
+    image: quay.io/rockylinux/rockylinux:10
+    pre_build_image: true
+    privileged: true
+
+  - name: oracle-10
+    image: container-registry.oracle.com/os/oraclelinux:10
+    pre_build_image: true
+    privileged: true
+
+  - name: opensuse
+    image: registry.opensuse.org/opensuse/tumbleweed:latest
+    pre_build_image: true
+    privileged: true
+
+  - name: opensuse-leap
+    image: registry.opensuse.org/opensuse/leap:15.6
+    pre_build_image: true
+    privileged: true
 provisioner:
   name: ansible
   timeout:
@@ -31,6 +58,20 @@ provisioner:
       fedora-newest:
         ansible_python_interpreter: /usr/bin/python3
         fonts: []
+      rhel8:
+        ansible_python_interpreter: /usr/bin/python3.11
+      rocky:
+        ansible_python_interpreter: /usr/bin/python3
+      alma:
+        ansible_python_interpreter: /usr/bin/python3
+      rocky-10:
+        ansible_python_interpreter: /usr/bin/python3
+      oracle-10:
+        ansible_python_interpreter: /usr/bin/python3
+      opensuse:
+        ansible_python_interpreter: /usr/bin/python3
+      opensuse-leap:
+        ansible_python_interpreter: /usr/bin/python3.11
   playbooks:
     prepare: prepare.yml
     converge: converge.yml
@@ -44,3 +85,5 @@ scenario:
     - converge
     - verify
     - destroy
+verifier:
+  name: ansible

@@ -43,7 +43,7 @@ platforms:
     privileged: true
 
   - name: opensuse-leap
-    image: registry.opensuse.org/opensuse/leap:latest
+    image: registry.opensuse.org/opensuse/leap:15.6
     pre_build_image: true
     privileged: true
 
@@ -64,7 +64,7 @@ provisioner:
       rhel8:
         ansible_python_interpreter: /usr/bin/python3.11
       opensuse-leap:
-        ansible_python_interpreter: /usr/bin/python3
+        ansible_python_interpreter: /usr/bin/python3.11
       debian-trixie:
         ansible_python_interpreter: /usr/bin/python3
       ubuntu-24.04:

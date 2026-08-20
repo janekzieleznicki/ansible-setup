@@ -26,6 +26,7 @@
 - name: Update DNF cache
   ansible.builtin.command: dnf makecache
   ignore_errors: yes
+  when: ansible_os_family == "RedHat"
 
 - name: Install dnf-plugins-core for RedHat family
   ansible.builtin.raw: |
@@ -64,7 +65,14 @@
       - cmake
       - golang
       - fuse3
-      - nodejs22
+    state: present
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat"
+  timeout: 600
+
+- name: Install nodejs for RedHat family
+  ansible.builtin.dnf:
+    name: nodejs
     state: present
   ignore_errors: yes
   when: ansible_os_family == "RedHat"
@@ -77,7 +85,6 @@
       - python3-pip
       - python3-setuptools
       - python3-devel
-      - python3-neovim
     state: present
   ignore_errors: yes
   when: ansible_os_family == "RedHat"
@@ -87,11 +94,40 @@
   ansible.builtin.dnf:
     name:
       - unzip
-      - fontconfig-devel
-      - alacritty
     state: present
   ignore_errors: yes
   when: ansible_os_family == "RedHat"
+  timeout: 600
+
+- name: Install X11/xcb build deps for cargo alacritty (RedHat family)
+  ansible.builtin.dnf:
+    name:
+      - freetype-devel
+      - fontconfig-devel
+      - libxcb-devel
+      - libxkbcommon-devel
+      - libX11-devel
+      - libXcursor-devel
+      - libXrandr-devel
+      - libXi-devel
+    state: present
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat"
+  timeout: 600
+
+- name: Install X11/xcb build deps for cargo alacritty (Suse family)
+  ansible.builtin.zypper:
+    name:
+      - freetype2-devel
+      - fontconfig-devel
+      - libxcb-devel
+      - libxkbcommon-devel
+      - libX11-devel
+      - libXcursor-devel
+      - libXrandr-devel
+      - libXi-devel
+    state: present
+  when: ansible_os_family == "Suse"
   timeout: 600
 
 - name: Install go for Fedora
@@ -146,7 +182,15 @@
     disable_gpg_check: yes
   when:
     - ansible_os_family == "RedHat"
-    - ansible_distribution not in ["Fedora", "Fedora Linux", "OracleLinux"]
+    - ansible_distribution not in ["Fedora", "Fedora Linux", "OracleLinux", "OracleLinuxServer"]
+
+- name: Install python3-neovim for RedHat family (after EPEL)
+  ansible.builtin.dnf:
+    name: python3-neovim
+    state: present
+  ignore_errors: yes
+  when: ansible_os_family == "RedHat"
+  timeout: 300
 
 - name: Install apt-utils for Debian family
   ansible.builtin.apt:

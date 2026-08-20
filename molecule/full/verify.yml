@@ -14,12 +14,11 @@
         - cmake
         - golang
         - fuse3
-        - nodejs22
+        - nodejs
         - python3
         - python3-pip
         - python3-setuptools
         - python3-devel
-        - python3-neovim
         - unzip
         - fontconfig-devel
       Suse:
@@ -53,10 +52,9 @@
       - /root/.cargo/bin/rg
       - /root/.cargo/bin/zoxide
       - /root/.cargo/bin/alacritty
-      - /root/go/bin/lazygit
   tasks:
     - name: Check package installation
-      ansible.builtin.command: rpm -q {{ item }}
+      ansible.builtin.command: rpm -q --whatprovides {{ item }} # noqa: command-instead-of-module
       register: pkg_check
       changed_when: false
       failed_when: false

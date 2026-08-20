@@ -4,4 +4,4 @@
   gather_facts: false
   tasks:
     - name: Run bootstrap tasks from role
-      import_tasks: ../../roles/server/tasks/bootstrap.yml
+      ansible.builtin.import_tasks: ../../roles/server/tasks/bootstrap.yml

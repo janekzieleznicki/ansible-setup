@@ -17,4 +17,3 @@ packages_suse:
   - python3-neovim
   - unzip
   - fontconfig-devel
-  - alacritty
