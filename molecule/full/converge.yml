@@ -1,6 +1,7 @@
 ---
 - name: Converge full scenario
   hosts: all
+  serial: 1
   become: false
   gather_facts: true
   roles:
