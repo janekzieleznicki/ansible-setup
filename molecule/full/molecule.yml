@@ -68,6 +68,22 @@ platforms:
     extra_opts:
       - --memory=2g
       - --cpus=2
+
+  - name: debian-trixie
+    image: debian:trixie
+    pre_build_image: true
+    privileged: true
+    extra_opts:
+      - --memory=2g
+      - --cpus=2
+
+  - name: ubuntu-24.04
+    image: ubuntu:24.04
+    pre_build_image: true
+    privileged: true
+    extra_opts:
+      - --memory=2g
+      - --cpus=2
 provisioner:
   name: ansible
   timeout:
@@ -95,8 +111,11 @@ provisioner:
       opensuse:
         ansible_python_interpreter: /usr/bin/python3
       opensuse-leap:
-        ansible_python_interpreter: /usr/bin/python3.11
-  playbooks:
+
+      debian-trixie:
+        ansible_python_interpreter: /usr/bin/python3
+      ubuntu-24.04:
+        ansible_python_interpreter: /usr/bin/python3
     prepare: prepare.yml
     converge: converge.yml
 scenario:
