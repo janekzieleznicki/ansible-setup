@@ -4,6 +4,10 @@ PIP         := $(VENV)/bin/pip
 MOLECULE    := $(VENV)/bin/molecule
 ANSIBLE_GALAXY := ansible-galaxy
 PODMAN      := podman
+# Molecule ephemeral dir token: first 4 chars of urlsafe-b64(sha256(project dir name))
+MOLECULE_TOKEN := $(shell printf '%s' "$(notdir $(CURDIR))" | sha256sum | cut -c1-6 | xxd -r -p | base64 | tr '+/' '-_')
+MOLECULE_EPHEMERAL_BASE := $(HOME)/.ansible/tmp
+ANSIBLE_PLAYBOOK := ansible-playbook
 
 # Standard goals that must not be treated as platform limit arguments
 STANDARD_TARGETS = test-smoke test-full converge destroy dependency-smoke destroy-smoke create-smoke prepare-smoke verify-smoke dependency-full destroy-full create-full converge-full verify-full cleanup-full
@@ -23,12 +27,11 @@ deps:
 	$(ANSIBLE_GALAXY) collection install community.general containers.podman community.docker
 
 test-smoke: $(VENV)
-	$(info DEBUG: $@ = $@, MAKECMDGOALS = $(MAKECMDGOALS), LIMIT_ARGS = $(LIMIT_ARGS))
-	$(MOLECULE) --debug test -s smoke $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+	$(MAKE) dependency-smoke destroy-smoke create-smoke prepare-smoke verify-smoke $(LIMIT_ARGS)
 
 test-full: $(VENV)
-	$(info DEBUG: $@ = $@, MAKECMDGOALS = $(MAKECMDGOALS), LIMIT_ARGS = $(LIMIT_ARGS))
-	$(MOLECULE) --debug test -s full $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+	$(MAKE) dependency-full destroy-full create-full converge-full verify-full $(LIMIT_ARGS)
+	$(MOLECULE) destroy -s full
 
 test: test-smoke test-full
 
@@ -52,7 +55,16 @@ prepare-smoke: $(VENV)
 	$(MOLECULE) prepare -s smoke $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
 
 verify-smoke: $(VENV)
-	$(MOLECULE) verify -s smoke $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+ifneq ($(LIMIT_ARGS),)
+	ANSIBLE_CONFIG=$(MOLECULE_EPHEMERAL_BASE)/molecule.$(MOLECULE_TOKEN).smoke/ansible.cfg \
+	$(ANSIBLE_PLAYBOOK) --diff \
+		--inventory $(MOLECULE_EPHEMERAL_BASE)/molecule.$(MOLECULE_TOKEN).smoke/inventory \
+		--skip-tags molecule-notest,notest \
+		--limit $(LIMIT_ARGS) \
+		molecule/smoke/verify.yml
+else
+	$(MOLECULE) verify -s smoke
+endif
 
 dependency-full: $(VENV)
 	$(MOLECULE) dependency -s full
@@ -67,7 +79,16 @@ converge-full: $(VENV)
 	$(MOLECULE) converge -s full $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
 
 verify-full: $(VENV)
-	$(MOLECULE) verify -s full $(if $(LIMIT_ARGS),-- --limit $(LIMIT_ARGS))
+ifneq ($(LIMIT_ARGS),)
+	ANSIBLE_CONFIG=$(MOLECULE_EPHEMERAL_BASE)/molecule.$(MOLECULE_TOKEN).full/ansible.cfg \
+	$(ANSIBLE_PLAYBOOK) --diff \
+		--inventory $(MOLECULE_EPHEMERAL_BASE)/molecule.$(MOLECULE_TOKEN).full/inventory \
+		--skip-tags molecule-notest,notest \
+		--limit $(LIMIT_ARGS) \
+		molecule/full/verify.yml
+else
+	$(MOLECULE) verify -s full
+endif
 
 cleanup-full: $(VENV)
 	$(MOLECULE) cleanup -s full
