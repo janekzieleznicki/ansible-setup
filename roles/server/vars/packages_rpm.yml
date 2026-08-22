@@ -8,7 +8,6 @@ packages_rpm:
   - gcc-c++
   - cmake
   - golang
-  - fuse3
   - nodejs22
   - python3
   - python3-pip

@@ -5,7 +5,6 @@ packages_apt:
   - git
   - curl
   - cmake
-  - fuse3
   - libfontconfig-dev
   - nodejs
   - python3

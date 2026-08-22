@@ -67,7 +67,6 @@
       - gcc-c++
       - cmake
       - golang
-      - fuse3
     state: present
   ignore_errors: yes
   when: ansible_os_family == "RedHat"
@@ -222,15 +221,55 @@
   become: no
   become_user: "{{ zsh_user }}"
 
-- name: Download neovim appimage
+- name: Ensure nvim opt directory exists for zsh_user
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/opt/nvim"
+    state: directory
+  become: no
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
+- name: Download neovim tarball
   ansible.builtin.get_url:
-    url: "{{ neovim_appimage_url }}"
-    dest: "{{ user_home }}/.local/bin/nvim.appimage"
-    mode: "0755"
+    url: "{{ neovim_tarball_url }}"
+    dest: "{{ user_home }}/.local/opt/{{ neovim_arch }}.tar.gz"
+    mode: "0644"
     force: no
   ignore_errors: yes
   become: no
   timeout: 600
+  register: nvim_download
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
+- name: Extract neovim tarball
+  ansible.builtin.unarchive:
+    src: "{{ user_home }}/.local/opt/{{ neovim_arch }}.tar.gz"
+    dest: "{{ user_home }}/.local/opt/nvim"
+    remote_src: yes
+    extra_opts:
+      - --strip-components=1
+    creates: "{{ user_home }}/.local/opt/nvim/bin/nvim"
+  become: no
+  timeout: 600
+  when:
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - nvim_download is success
+
+- name: Link nvim into user bin
+  ansible.builtin.file:
+    src: "{{ user_home }}/.local/opt/nvim/bin/nvim"
+    dest: "{{ user_home }}/.local/bin/nvim"
+    state: link
+    force: yes
+  become: no
+  when:
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - nvim_download is success
+
+- name: Remove obsolete neovim appimage
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/bin/nvim.appimage"
+    state: absent
+  become: no
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: Install fonts

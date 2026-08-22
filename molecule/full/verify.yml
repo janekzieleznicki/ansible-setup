@@ -3,48 +3,46 @@
   hosts: all
   gather_facts: true
   vars:
-    package_sets:
-      RedHat:
-        - zsh
-        - acl
-        - git
-        - curl
-        - gcc
-        - gcc-c++
-        - cmake
-        - golang
-        - fuse3
-        - nodejs
-        - python3
-        - python3-pip
-        - python3-setuptools
-        - python3-devel
-        - unzip
-        - fontconfig-devel
-      Suse:
-        - zsh
-        - acl
-        - git
-        - curl
-        - gcc
-        - gcc-c++
-        - cmake
-        - golang
-        - fuse3
-        - nodejs
-        - python3
-        - python3-pip
-        - python3-setuptools
-        - python3-devel
-        - unzip
-        - fontconfig-devel
+package_sets:
+  RedHat:
+    - zsh
+    - acl
+    - git
+    - curl
+    - gcc
+    - gcc-c++
+    - cmake
+    - golang
+    - nodejs
+    - python3
+    - python3-pip
+    - python3-setuptools
+    - python3-devel
+    - unzip
+    - fontconfig-devel
+  Suse:
+    - zsh
+    - acl
+    - git
+    - curl
+    - gcc
+    - gcc-c++
+    - cmake
+    - golang
+    - nodejs
+    - python3
+    - python3-pip
+    - python3-setuptools
+    - python3-devel
+    - unzip
+    - fontconfig-devel
     extra_packages:
       Fedora: [python3-neovim]
       RedHat: [epel-release]
     expected_packages: "{{ package_sets[ansible_facts['os_family']] | default([])
         + extra_packages[ansible_facts['distribution']] | default([]) }}"
     artifact_paths:
-      - /home/root/.local/bin/nvim.appimage
+      - /home/root/.local/bin/nvim
       - /root/.config/alacritty/icon.svg
       - /home/root/.dotfiles
       - /root/.cargo/bin/rustup
@@ -78,10 +76,19 @@
           - item.stat.exists
       loop: "{{ artifacts.results }}"
 
-    - name: Assert nvim appimage is executable
+    - name: Assert nvim is executable
       ansible.builtin.assert:
         that:
           - artifacts.results[0].stat.executable
+    - name: Check nvim runs
+      ansible.builtin.command: /home/root/.local/bin/nvim --version
+      register: nvim_version
+      changed_when: false
+
+    - name: Assert nvim version output
+      ansible.builtin.assert:
+        that:
+          - "'NVIM' in nvim_version.stdout"
 
     - block:
         - name: Find installed nerd fonts
