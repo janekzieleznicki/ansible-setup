@@ -1,5 +1,10 @@
 ---
-
+- name: "Install {{ font }} Nerd Font via Homebrew cask (macOS)"
+  community.general.homebrew:
+    name: "{{ brew_font_casks[font] }}"
+    state: present
+  become: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
 
 - name: ensure fonts directory
   file:
@@ -7,11 +12,13 @@
     state: directory
   become: yes
   become_user: "{{ zsh_user }}"
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: "{{ font }} exists"
   shell: "ls /home/{{ zsh_user }}/.local/share/fonts/{{ font }}*Nerd*Font*Complete*"
   register: font_exists
   ignore_errors: yes
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: Ensure archive utilities are installed
   ansible.builtin.package:
@@ -20,9 +27,10 @@
       - tar
     state: present
   become: true
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: "Download {{ font }}"
-  when: font_exists is failed
+  when: font_exists is failed and (ansible_facts['os_family'] | default('')) != 'Darwin'
   ansible.builtin.unarchive:
     src: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.2/{{ font }}.zip
     dest: "/home/{{ zsh_user }}/.local/share/fonts"

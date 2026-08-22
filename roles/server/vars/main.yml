@@ -1,3 +1,5 @@
 ---
 zsh_user: "{{ ansible_facts['user_id'] }}"
 dotfiles_version: master
+
+user_home: "{{ ('/var/root' if zsh_user == 'root' else '/Users/' + zsh_user) if (ansible_facts['os_family'] | default('')) == 'Darwin' else '/home/' + zsh_user }}"

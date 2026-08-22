@@ -1,0 +1,4 @@
+---
+packages_darwin:
+  - qemu
+  - libvirt

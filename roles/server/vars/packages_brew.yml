@@ -1,0 +1,12 @@
+---
+packages_brew:
+  - zsh
+  - git
+  - curl
+  - cmake
+  - go
+  - node
+  - python
+  - neovim
+  - unzip
+  - fontconfig

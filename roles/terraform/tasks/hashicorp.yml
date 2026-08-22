@@ -27,7 +27,15 @@
   when: ansible_facts['os_family'] == 'Debian'
 
 # Install Vagrant package across all supported platforms
+- name: Install Vagrant (macOS)
+  community.general.homebrew:
+    name: vagrant
+    state: present
+  become: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+
 - name: Install Vagrant
   ansible.builtin.package:
     name: vagrant
     state: present
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'

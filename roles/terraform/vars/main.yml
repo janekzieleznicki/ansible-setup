@@ -29,4 +29,11 @@ sudoers_linux: |
   Cmnd_Alias VAGRANT_NFSD_APPLY = /usr/sbin/exportfs -ar
   %sudo ALL=(root) NOPASSWD: VAGRANT_EXPORTS_CHOWN, VAGRANT_EXPORTS_MV, VAGRANT_NFSD_CHECK, VAGRANT_NFSD_START, VAGRANT_NFSD_APPLY
 
+
+sudoers_darwin: |
+  Cmnd_Alias VAGRANT_EXPORTS_CHOWN = /usr/sbin/chown root\:wheel /tmp/vagrant-exports
+  Cmnd_Alias VAGRANT_EXPORTS_MV = /bin/mv -f /tmp/vagrant-exports /etc/exports
+  Cmnd_Alias VAGRANT_NFSD_CHECK = /sbin/nfsd checkexports
+  Cmnd_Alias VAGRANT_NFSD_RESTART = /sbin/nfsd restart
+  %admin ALL=(root) NOPASSWD: VAGRANT_EXPORTS_CHOWN, VAGRANT_EXPORTS_MV, VAGRANT_NFSD_CHECK, VAGRANT_NFSD_RESTART
 sudoers: "{{ lookup('vars', 'sudoers_'+ansible_facts['os_family']|lower, default=sudoers_linux) }}"

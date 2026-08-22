@@ -14,6 +14,9 @@
 - name: Load server packages suse variable file
   include_vars: packages_suse.yml
 
+- name: Load server packages brew variable file
+  include_vars: packages_brew.yml
+
 - name: Distro debug
   ansible.builtin.debug:
     msg: "Detected os_family: {{ ansible_os_family | default('unknown') }} and distribution: {{ ansible_distribution | default('unknown') }} version: {{ ansible_distribution_major_version | default('unknown') }}"
@@ -214,7 +217,7 @@
 
 - name: Ensure bin directory exists for zsh_user
   ansible.builtin.file:
-    path: /home/{{ zsh_user }}/.local/bin
+    path: "{{ user_home }}/.local/bin"
     state: directory
   become: no
   become_user: "{{ zsh_user }}"
@@ -222,12 +225,13 @@
 - name: Download neovim appimage
   ansible.builtin.get_url:
     url: "{{ neovim_appimage_url }}"
-    dest: /home/{{ zsh_user }}/.local/bin/nvim.appimage
+    dest: "{{ user_home }}/.local/bin/nvim.appimage"
     mode: "0755"
     force: no
   ignore_errors: yes
   become: no
   timeout: 600
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: Install fonts
   include_role:
@@ -243,3 +247,22 @@
     name: "{{ packages_suse }}"
     state: present
   when: ansible_os_family == "Suse"
+
+- name: Ensure Homebrew is installed (macOS)
+  ansible.builtin.shell: |
+    if ! command -v brew >/dev/null 2>&1 && [ ! -x /opt/homebrew/bin/brew ] && [ ! -x /usr/local/bin/brew ]; then
+      NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+  become: false
+  changed_when: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+  timeout: 1800
+
+- name: Install brew packages (macOS)
+  community.general.homebrew:
+    name: "{{ packages_brew }}"
+    state: present
+    update_homebrew: true
+  become: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+  timeout: 3600

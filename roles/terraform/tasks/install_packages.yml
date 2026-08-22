@@ -5,6 +5,9 @@
 - name: Load terraform packages debian variable file
   include_vars: packages_debian.yml
 
+- name: Load terraform packages darwin variable file
+  include_vars: packages_darwin.yml
+
 - name: Install dnf plugins core (for config-manager)
   dnf:
     name: dnf-plugins-core
@@ -50,3 +53,11 @@
     regexp: '# deb-src '
     replace: 'deb-src '
   when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install qemu and libvirt via Homebrew (macOS)
+  community.general.homebrew:
+    name: "{{ packages_darwin }}"
+    state: present
+  become: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+  timeout: 3600

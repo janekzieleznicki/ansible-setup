@@ -2,7 +2,7 @@
 - name: dotfiles git clone for {{ zsh_user }} using ssh
   git:
     repo: git@github.com:janekzieleznicki/dotfiles.git
-    dest: /home/{{ zsh_user }}/.dotfiles
+    dest: "{{ user_home }}/.dotfiles"
     force: yes
     version: "{{ dotfiles_version }}"
     accept_hostkey: yes
@@ -21,7 +21,7 @@
   when: ssh_github is failed
   git:
     repo: https://github.com/janekzieleznicki/dotfiles.git
-    dest: /home/{{ zsh_user }}/.dotfiles
+    dest: "{{ user_home }}/.dotfiles"
     force: yes
     version: "{{ dotfiles_version }}"
   become: true
@@ -38,7 +38,7 @@
   become_user: "{{ zsh_user }}"
 
 - name: dotfiles install for {{ zsh_user }}
-  command: /home/{{ zsh_user }}/.dotfiles/install
+  command: "{{ user_home }}/.dotfiles/install"
   timeout: 3600
   become: true
   become_user: "{{ zsh_user }}"
@@ -86,6 +86,7 @@
     state: directory
   become: true
   become_user: "{{ zsh_user }}"
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: Create alacritty desktop entry
   ansible.builtin.template:
@@ -94,6 +95,7 @@
   ignore_errors: true
   become: true
   become_user: "{{ zsh_user }}"
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: Copy alacritty icon
   ansible.builtin.template:
@@ -101,4 +103,5 @@
     dest: ~/.config/alacritty/icon.svg
   ignore_errors: true
   become: true
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
   become_user: "{{ zsh_user }}"
