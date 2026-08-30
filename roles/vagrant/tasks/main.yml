@@ -1,0 +1,64 @@
+---
+- name: Build-deps on Debians for vagrant-libvirt
+  ansible.builtin.apt:
+    name:
+     - vagrant
+     - ruby-libvirt
+    state: build-dep
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Add official HashiCorp RPM Repository
+  ansible.builtin.yum_repository:
+    name: hashicorp
+    description: HashiCorp Stable - $basearch
+    baseurl: "https://rpm.releases.hashicorp.com/RHEL/$releasever/$basearch/stable"
+    enabled: true
+    gpgcheck: true
+    gpgkey: https://rpm.releases.hashicorp.com/gpg
+  when: 
+    - ansible_facts['os_family'] == 'RedHat'
+    - ansible_facts['distribution'] != 'Fedora'
+
+- name: Download HashiCorp GPG key
+  ansible.builtin.get_url:
+    url: https://apt.releases.hashicorp.com/gpg
+    dest: /etc/apt/keyrings/hashicorp-archive-keyring.asc
+    mode: '0644'
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Add HashiCorp apt repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/hashicorp-archive-keyring.asc] https://apt.releases.hashicorp.com {{ ansible_facts['distribution_release'] }} main"
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install Vagrant (macOS)
+  community.general.homebrew:
+    name: vagrant
+    state: present
+  become: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+
+- name: Install Vagrant
+  ansible.builtin.package:
+    name: vagrant
+    state: present
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
+- name: Insert sudoers config for NFS
+  ansible.builtin.blockinfile:
+    block:  "{{ sudoers }}"
+    path: /etc/sudoers.d/vagrant-nfs
+    backup: yes
+    create: yes
+    validate: visudo -cf %s
+
+- name: Install vagrant-libvirt
+  ansible.builtin.command:
+    argv: [vagrant, plugin, install, vagrant-libvirt]
+  register: vagrant_plugin
+  changed_when: vagrant_plugin.rc == 0
+  failed_when: vagrant_plugin.rc != 0 and 'already installed' not in (vagrant_plugin.stdout ~ vagrant_plugin.stderr)
+  become: true
+  become_user: "{{ username }}"

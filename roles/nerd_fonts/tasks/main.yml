@@ -1,0 +1,44 @@
+---
+- name: Loop over nerd fonts to ensure each is installed
+  ansible.builtin.include_tasks: nerd_font_font.yml
+  loop: "{{ nerd_fonts }}"
+
+- name: Ensure fonts directory exists (Darwin only)
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/fonts"
+    state: directory
+    mode: '0755'
+  become: yes
+  become_user: "{{ username }}"
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+
+- name: Check for installed {{ font }} Nerd Font (Linux, skip Fedora)
+  ansible.builtin.find:
+    paths: "{{ user_home }}/.local/share/fonts"
+    patterns: "{{ font }}*Nerd*Font*Complete*"
+  register: font_find
+  when:
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - ansible_distribution != 'Fedora'
+
+- name: Ensure archive utilities are installed (Linux, skip Fedora)
+  ansible.builtin.package:
+    name:
+      - unzip
+      - tar
+    state: present
+  when:
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - ansible_distribution != 'Fedora'
+
+- name: Download {{ font }} Nerd Font (Linux, skip Fedora, retries 5, delay 20)
+  when:
+    - font_find.matched | default(0) == 0
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - ansible_distribution != 'Fedora'
+  ansible.builtin.unarchive:
+    src: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.2/{{ font }}.zip
+    dest: "{{ user_home }}/.local/share/fonts"
+    remote_src: yes
+  retries: 5
+  delay: 20

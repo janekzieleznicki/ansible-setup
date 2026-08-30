@@ -1,0 +1,4 @@
+packages_redhat: [zsh, acl, git, curl, gcc, gcc-c++, cmake, golang, nodejs, python3, python3-pip, python3-setuptools, python3-devel, unzip]
+packages_debian: [zsh, acl, git, curl, cmake, libfontconfig-dev, nodejs, python3, python3-pip, python3-setuptools, python3-neovim, unzip, golang-go]
+packages_suse: [zsh, acl, git, curl, gcc, gcc-c++, cmake, golang, nodejs, python3, python3-pip, python3-devel, python3-neovim, unzip, fontconfig-devel]
+packages_darwin: [zsh, git, curl, cmake, go, node, python, neovim, unzip, fontconfig]

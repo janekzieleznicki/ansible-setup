@@ -1,0 +1,4 @@
+neovim_arch_map:
+  x86_64: nvim-linux-x86_64
+  aarch64: nvim-linux-arm64
+neovim_arch: "{{ neovim_arch_map[ansible_architecture] }}"

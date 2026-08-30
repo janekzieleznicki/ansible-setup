@@ -1,0 +1,50 @@
+---
+# OpenTofu repository tasks
+- name: Install OpenTofu repo key on Debian
+  apt_key:
+    url: https://apt.opentofu.org/apt.gpg
+    state: present
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install OpenTofu apt repo on Debian
+  apt_repository:
+    repo: deb https://apt.opentofu.org/{{ ansible_facts['lsb']['codename'] }} main
+    state: present
+    filename: opentofu
+  when: ansible_facts['os_family'] == 'Debian'
+
+# 2. Add the official OpenTofu Repository (RedHat / Fedora)
+- name: Add OpenTofu Repository (YUM/DNF)
+  ansible.builtin.yum_repository:
+    name: opentofu
+    description: OpenTofu RPM Repository
+    baseurl: https://packages.opentofu.org/opentofu/tofu/rpm_any/rpm_any/$basearch
+    enabled: yes
+    gpgcheck: yes
+    repo_gpgcheck: no
+    gpgkey: 
+      - https://get.opentofu.org/opentofu.gpg
+      - https://packages.opentofu.org/opentofu/tofu/gpgkey
+  when: ansible_pkg_mgr in ['yum', 'dnf', 'dnf5']
+
+# 3. Add the official OpenTofu Repository (openSUSE)
+- name: Add OpenTofu Repository (Zypper)
+  ansible.builtin.zypper_repository:
+    name: opentofu
+    repo: https://packages.opentofu.org/opentofu/tofu/rpm_any/rpm_any/$basearch
+    state: present
+    auto_import_keys: yes
+  when: ansible_pkg_mgr == 'zypper'
+
+- name: Install OpenTofu (macOS)
+  community.general.homebrew:
+    name: opentofu
+    state: present
+  become: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+
+- name: Install OpenTofu
+  ansible.builtin.package:
+    name: tofu
+    state: latest
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'

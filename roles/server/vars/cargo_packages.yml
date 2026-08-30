@@ -1,8 +1,0 @@
----
-cargo_packages:
-  - crate: ripgrep
-    bin: rg
-  - crate: zoxide
-    bin: zoxide
-  - crate: alacritty
-    bin: alacritty

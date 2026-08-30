@@ -97,7 +97,7 @@ provisioner:
     host_vars:
       fedora-newest:
         ansible_python_interpreter: /usr/bin/python3
-        fonts: []
+        nerd_fonts: []
       rhel8:
         ansible_python_interpreter: /usr/bin/python3.11
       rocky:

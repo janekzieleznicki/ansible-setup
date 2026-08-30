@@ -1,0 +1,64 @@
+---
+- name: Ensure bin directory exists for user
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/bin"
+    state: directory
+  become: no
+  become_user: "{{ username }}"
+
+- name: Ensure nvim opt directory exists for user
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/opt/nvim"
+    state: directory
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+  become: no
+  become_user: "{{ username }}"
+
+- name: Download neovim tarball
+  ansible.builtin.get_url:
+    url: "{{ neovim_tarball_url }}"
+    dest: "{{ user_home }}/.local/opt/{{ neovim_arch }}.tar.gz"
+    mode: "0644"
+    force: no
+  ignore_errors: yes
+  become: no
+  register: nvim_download
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
+- name: Extract neovim tarball
+  ansible.builtin.unarchive:
+    src: "{{ user_home }}/.local/opt/{{ neovim_arch }}.tar.gz"
+    dest: "{{ user_home }}/.local/opt/nvim"
+    remote_src: yes
+    extra_opts:
+      - --strip-components=1
+    creates: "{{ user_home }}/.local/opt/nvim/bin/nvim"
+  become: no
+  timeout: 600
+  when:
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - nvim_download is success
+
+- name: Link nvim into user bin
+  ansible.builtin.file:
+    src: "{{ user_home }}/.local/opt/nvim/bin/nvim"
+    dest: "{{ user_home }}/.local/bin/nvim"
+    state: link
+    force: yes
+  become: no
+  when:
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - nvim_download is success
+
+- name: Remove obsolete neovim appimage
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/bin/nvim.appimage"
+    state: absent
+  become: no
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
+- name: Install neovim pip package (CentOS)
+  ansible.builtin.pip:
+    name: "{{ neovim_pip_package }}"
+    executable: pip3
+  when: ansible_facts['distribution'] == "CentOS"

@@ -1,0 +1,5 @@
+username: "{{ ansible_facts['user_id'] }}"
+user_home: "{{ ('/var/root' if username == 'root' else '/Users/' + username) if (ansible_facts['os_family'] | default('')) == 'Darwin' else '/home/' + username }}"
+dotfiles_repo_ssh: git@github.com:janekzieleznicki/dotfiles.git
+dotfiles_repo_https: https://github.com/janekzieleznicki/dotfiles.git
+dotfiles_version: master

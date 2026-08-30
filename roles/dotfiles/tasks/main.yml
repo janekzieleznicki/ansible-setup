@@ -1,0 +1,79 @@
+---
+- name: Clone dotfiles repository
+  ansible.builtin.shell: |
+    set -e
+    if [ -d "{{ user_home }}/.dotfiles" ]; then
+      echo "Dotfiles directory already exists, skipping clone"
+    else
+      ssh -T git@github.com 2>&1 | grep -q "janiekzieleznicki" && \
+        git clone "{{ dotfiles_repo_ssh }}" "{{ user_home }}/.dotfiles" || \
+        git clone "{{ dotfiles_repo_https }}" "{{ user_home }}/.dotfiles.fallback"
+      if [ -d "{{ user_home }}/.dotfiles.fallback" ]; then
+        mv "{{ user_home }}/.dotfiles.fallback" "{{ user_home }}/.dotfiles"
+      fi
+    fi
+  args:
+    executable: /bin/bash
+  failed_when: false
+
+- name: Ensure alacritty config directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.config/alacritty"
+    state: directory
+    become: no
+
+- name: Run dotfiles install script
+  ansible.builtin.shell: |
+    set -e
+    "{{ user_home }}/.dotfiles/install" || true
+  args:
+    executable: /bin/bash
+  timeout: 3600
+  changed_when: false
+
+- name: Set zsh as login shell
+  ansible.builtin.user:
+    name: "{{ username }}"
+    shell: /bin/zsh
+  become: no
+  when: ansible_facts['os_family'] != "Darwin"
+
+- name: Install lazygit
+  ansible.builtin.raw: |
+    set -e
+    if ! command -v lazygit >/dev/null 2>&1; then
+      LAZYGIT_VERSION=$(curl -s https://latest.release.lazygit.dev | grep -oP 'lazygit/\K[0-9]+([.][0-9]+)+' | head -1)
+      curl -sLO "https://github.com/jesseduffield/lazygit/releases/download/${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+      tar -xzf lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz
+      sudo cp lazygit /usr/local/bin/lazygit
+      rm lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz lazygit
+    fi
+  become: no
+  changed_when: false
+  failed_when: false
+
+- name: Ensure local share applications directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/applications"
+    state: directory
+    become: no
+
+- name: Template alacritty desktop entry
+  ansible.builtin.template:
+    src: alacritty.desktop
+    dest: "{{ user_home }}/.local/share/applications/alacritty.desktop"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
+  become: no
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
+- name: Template alacritty icon
+  ansible.builtin.template:
+    src: alacritty.icon.svg
+    dest: "{{ user_home }}/.config/alacritty/icon.svg"
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    mode: "0644"
+  become: no
+  when: (ansible_facts['os_family'] | default('')) != 'Darwin'

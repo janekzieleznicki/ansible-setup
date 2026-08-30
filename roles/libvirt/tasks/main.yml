@@ -1,0 +1,103 @@
+---
+- name: Load libvirt packages redhat variable file
+  ansible.builtin.include_vars: packages_redhat.yml
+- name: Load libvirt packages debian variable file
+  ansible.builtin.include_vars: packages_debian.yml
+- name: Load libvirt packages darwin variable file
+  ansible.builtin.include_vars: packages_darwin.yml
+
+- name: Install dnf plugins core (for config-manager)
+  ansible.builtin.dnf:
+    name: dnf-plugins-core
+    state: present
+  when: ansible_facts['os_family'] == "RedHat"
+
+- name: Enable CRB / Powertools repository for devel packages (Alma/Rocky)
+  ansible.builtin.command:
+    argv: [dnf, config-manager, --set-enabled, "{{ 'crb' if ansible_facts['distribution_major_version'] | int >= 9 else 'powertools' }}"]
+  when: ansible_facts['distribution'] in ['AlmaLinux', 'Rocky']
+  changed_when: false
+  failed_when: false
+
+- name: Enable CodeReady Builder on Oracle Linux
+  ansible.builtin.command:
+    argv: [dnf, config-manager, --set-enabled, "ol{{ ansible_facts['distribution_major_version'] }}_codeready_builder"]
+  when: ansible_facts['distribution'] == "OracleLinux"
+  changed_when: false
+  failed_when: false
+
+- name: Enable CodeReady Builder on RHEL
+  ansible.builtin.command:
+    argv: [subscription-manager, repos, --enable, "codeready-builder-for-rhel-{{ ansible_facts['distribution_major_version'] }}-{{ ansible_facts['architecture'] }}-rpms"]
+  when: ansible_facts['distribution'] == "RedHat"
+  changed_when: false
+  failed_when: false
+
+- name: Install @virtualization group on RedHats
+  ansible.builtin.dnf:
+    name: "{{ packages_redhat }}"
+    state: present
+    allowerasing: true
+  when: ansible_facts['os_family'] == "RedHat"
+  failed_when: false
+
+- name: Install deps on Debians
+  ansible.builtin.apt:
+    name: "{{ packages_debian }}"
+    state: present
+    update_cache: yes
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Enable source repos on Debians
+  ansible.builtin.replace:
+    path: /etc/apt/sources.list
+    regexp: '# deb-src '
+    replace: 'deb-src '
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install qemu and libvirt via Homebrew (macOS)
+  community.general.homebrew:
+    name: "{{ packages_darwin }}"
+    state: present
+  become: false
+  when: (ansible_facts['os_family'] | default('')) == 'Darwin'
+  timeout: 3600
+
+- name: Ensure group exists
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ user_groups }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Add user to group
+  ansible.builtin.user:
+    name: '{{ username }}'
+    groups: "{{ item }}"
+    append: yes
+  loop: "{{ user_groups }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Ensure libvirt service or sockets are enabled and active (RedHat / Enterprise Linux)
+  ansible.builtin.service:
+    name: libvirtd
+    state: started
+    enabled: yes
+  when: 
+    - ansible_facts['os_family'] == "RedHat"
+    - ansible_facts['distribution'] != "Fedora"
+
+- name: Ensure libvirt modular sockets are enabled and active (Fedora & openSUSE)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: yes
+  loop:
+    - virtqemud.socket
+    - virtnetworkd.socket
+    - virtstoraged.socket
+  when: 
+    - ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse"
+  failed_when: false

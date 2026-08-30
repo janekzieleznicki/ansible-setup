@@ -1,5 +1,0 @@
----
-  - ansible.builtin.import_tasks: bootstrap.yml
-  - ansible.builtin.import_tasks: install_packages.yml
-  - ansible.builtin.import_tasks: clone_dotfiles.yml
-  - ansible.builtin.import_tasks: install_cargo_packages.yml

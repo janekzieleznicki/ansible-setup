@@ -3,44 +3,5 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: Bootstrap | Install python3 + bindings + sudo + curl + tar via dnf
-      ansible.builtin.raw: |
-        /bin/sh -c '
-          if command -v dnf >/dev/null 2>&1; then
-            if grep -q platform:el8 /etc/os-release; then
-              dnf -y install epel-release
-              dnf -y config-manager --set-enabled powertools
-            dnf -y --allowerasing install python3.11 python3-dnf sudo curl tar
-              ln -sf /usr/bin/python3.11 /usr/bin/python3 || true
-            else
-              dnf -y --allowerasing install python3 python3-dnf sudo curl tar
-              dnf -y --allowerasing install python3-libdnf5 || true
-            fi
-          fi
-        '
-      changed_when: false
-
-    - name: Bootstrap | Install python3 + bindings + sudo + curl + tar via zypper
-      ansible.builtin.raw: |
-        /bin/sh -c '
-          if command -v zypper >/dev/null 2>&1; then
-            if [ -f /etc/os-release ] && grep -Eq "VERSION_ID=\"1[56]" /etc/os-release; then
-              zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar
-            else
-              zypper --non-interactive install python3 python3-rpm sudo curl tar
-            fi
-          fi
-        '
-
-    - name: Bootstrap | Install python3 + bindings + sudo + curl + tar via apt
-      ansible.builtin.raw: |
-        /bin/sh -c '
-          if command -v apt >/dev/null 2>&1; then
-            apt-get update -y
-            apt-get install -y python3 sudo curl tar
-          fi
-        '
-
-    - name: Ensure python3 is present
-      ansible.builtin.raw: python3 --version
-      changed_when: false
+    - name: Run bootstrap tasks from role
+      ansible.builtin.import_tasks: ../../roles/bootstrap/tasks/main.yml

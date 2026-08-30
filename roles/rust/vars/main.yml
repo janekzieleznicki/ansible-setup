@@ -1,0 +1,2 @@
+rust_build_deps_redhat: [freetype-devel, fontconfig-devel, libxcb-devel, libxkbcommon-devel, libX11-devel, libXcursor-devel, libXrandr-devel, libXi-devel]
+rust_build_deps_suse: [freetype2-devel, fontconfig-devel, libxcb-devel, libxkbcommon-devel, libX11-devel, libXcursor-devel, libXrandr-devel, libXi-devel]

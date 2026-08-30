@@ -1,0 +1,62 @@
+---
+- name: Install rustup
+  ansible.builtin.get_url:
+    url: https://sh.rustup.rs
+    dest: /tmp/rustup.sh
+    mode: '0755'
+  become: no
+
+- name: Run rustup install
+  ansible.builtin.command:
+    argv: [/tmp/rustup.sh, -y, --no-modify-path]
+    creates: "{{ user_home }}/.cargo/bin/rustup"
+  become: no
+  become_user: "{{ username }}"
+
+- name: Install alacritty build deps (RedHat)
+  ansible.builtin.dnf:
+    name: "{{ rust_build_deps_redhat }}"
+    state: present
+  become: true
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Install alacritty build deps (Suse)
+  ansible.builtin.zypper:
+    name: "{{ rust_build_deps_suse }}"
+    state: present
+  become: true
+  when: ansible_facts['os_family'] == 'Suse'
+
+- name: Update rustup
+  ansible.builtin.command:
+    argv: ["{{ user_home }}/.cargo/bin/rustup", update]
+  register: rustup_update
+  become: no
+  become_user: "{{ username }}"
+  changed_when: "'unchanged' not in rustup_update.stdout"
+  retries: 3
+  delay: 10
+  until: rustup_update is success
+
+- name: Clear cargo registry cache
+  ansible.builtin.file:
+    path: "{{ user_home }}/.cargo/registry/index"
+    state: absent
+  become: no
+  become_user: "{{ username }}"
+  changed_when: false
+
+- name: Install cargo packages
+  community.general.cargo:
+    name: "{{ item }}"
+    state: present
+    executable: "{{ user_home }}/.cargo/bin/cargo"
+  environment:
+    RUSTFLAGS: "-C target-cpu=native"
+  become: true
+  become_user: "{{ username }}"
+  loop: "{{ cargo_packages }}"
+  register: cargo_install
+  retries: 3
+  delay: 15
+  until: cargo_install is not failed

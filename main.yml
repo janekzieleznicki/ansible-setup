@@ -2,5 +2,12 @@
 - hosts: all
   gather_facts: True
   roles:
-    - { role: server, tags: dotfiles }
-    - { role: terraform, tags: virtools, become: true }
+    - { role: bootstrap, tags: base }
+    - { role: packages, tags: packages }
+    - { role: dotfiles, tags: dotfiles }
+    - { role: neovim, tags: editor }
+    - { role: nerd_fonts, tags: fonts }
+    - { role: rust, tags: rust }
+    - { role: libvirt, tags: virtools, become: true }
+    - { role: vagrant, tags: virtools, become: true }
+    - { role: opentofu, tags: virtools, become: true }

@@ -1,0 +1,31 @@
+- name: Ensure fonts directory exists
+  ansible.builtin.file:
+    path: "{{ user_home }}/.local/share/fonts"
+    state: directory
+    mode: '0755'
+  become: yes
+  become_user: "{{ username }}"
+
+- name: Check for installed {{ font }} Nerd Font
+  ansible.builtin.find:
+    paths: "{{ user_home }}/.local/share/fonts"
+    patterns: "{{ font }}*Nerd*Font*Complete*"
+  register: font_find
+  when: ansible_distribution != 'Fedora'
+
+- name: Ensure archive utilities are installed
+  ansible.builtin.package:
+    name:
+      - unzip
+      - tar
+    state: present
+
+- name: Download {{ font }} Nerd Font
+  when:
+    - font_find.matched | default(0) == 0
+  ansible.builtin.unarchive:
+    src: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.2/{{ font }}.zip
+    dest: "{{ user_home }}/.local/share/fonts"
+    remote_src: yes
+  retries: 5
+  delay: 20

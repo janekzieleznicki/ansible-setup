@@ -1,6 +1,0 @@
----
-dependency:
-  name: galaxy
-driver:
-  name: containers
-platforms: []

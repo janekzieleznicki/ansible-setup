@@ -1,5 +1,0 @@
----
-  ansible.builtin.import_tasks: install_packages.yml
-  ansible.builtin.import_tasks: hashicorp.yml
-  ansible.builtin.import_tasks: opentofu.yml
-  ansible.builtin.import_tasks: vagrant.yml
