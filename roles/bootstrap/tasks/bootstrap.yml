@@ -28,7 +28,8 @@
   timeout: 1200
 - name: Bootstrap | Install python3 via zypper (SUSE family)
   ansible.builtin.raw: "/bin/sh -c '\n  if command -v zypper >/dev/null 2>&1; then\n\
-    \    zypper --non-interactive install -y python3\n  fi\n'"
+    \    zypper --non-interactive install -y python311 || true\n    ln -sf /usr/bin/python3.11\
+    \ /usr/bin/python3 || true\n  fi\n'"
   become: false
   changed_when: false
   timeout: 300
@@ -36,6 +37,20 @@
   ansible.builtin.raw: "/bin/sh -c '\n  if command -v apt >/dev/null 2>&1; then\n\
     \    export DEBIAN_FRONTEND=noninteractive\n    apt-get update -qq\n    apt-get\
     \ install -y -qq python3\n  fi\n'"
+  become: false
+  changed_when: false
+  timeout: 300
+- name: Bootstrap | Install python3.11 + symlink on EL8 (if python3 missing)
+  ansible.builtin.raw: "/bin/sh -c '\n  if command -v dnf >/dev/null 2>&1; then\n\
+    \    if ! command -v python3 >/dev/null 2>&1; then\n      if grep -q platform:el8\
+    \ /etc/os-release; then\n        if ! rpm -q epel-release >/dev/null 2>&1; then\n\
+    \          dnf -y install epel-release\n        fi\n        dnf -y config-manager\
+    \ --set-enabled powertools\n        if ! rpm -q python3.11 python3-dnf >/dev/null\
+    \ 2>&1; then\n          timeout 120 dnf -y install python3.11 python3-dnf || {\n\
+    \            timeout 120 dnf -y install --best --allowerasing python3.11 python3-dnf\n\
+    \          }\n        fi\n        ln -sf /usr/bin/python3.11 /usr/bin/python3\
+    \ || true\n      else\n        dnf install -y python3\n      fi\n    fi\n  fi\n\
+    '"
   become: false
   changed_when: false
   timeout: 300
