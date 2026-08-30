@@ -1,63 +1,70 @@
+---
 - name: Ensure bin directory exists for user
   ansible.builtin.file:
     path: '{{ user_home }}/.local/bin'
     state: directory
-  become: false
+  become: no
   become_user: '{{ username }}'
+
 - name: Ensure nvim opt directory exists for user
   ansible.builtin.file:
     path: '{{ user_home }}/.local/opt/nvim'
     state: directory
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
-  become: false
+  become: no
   become_user: '{{ username }}'
-- name: Ensure xz is installed for tar.xz extraction (raw)
-  ansible.builtin.raw: "/bin/sh -c '\n  if ! command -v xz >/dev/null 2>&1; then\n\
-    \    if command -v apt >/dev/null 2>&1; then\n      apt-get update -qq && apt-get\
-    \ install -y -qq xz-utils\n    elif command -v dnf >/dev/null 2>&1; then\n   \
-    \   dnf install -y xz\n    elif command -v zypper >/dev/null 2>&1; then\n    \
-    \  zypper --non-interactive install -y xz\n    fi\n  fi\n'"
-  become: false
-  changed_when: false
+
 - name: Download neovim tarball
   ansible.builtin.get_url:
     url: '{{ neovim_tarball_url }}'
     dest: '{{ user_home }}/.local/opt/{{ neovim_arch }}.tar.gz'
-    mode: '0644'
-    force: false
-  ignore_errors: true
-  become: false
+    mode: "0644"
+    force: no
+  ignore_errors: yes
+  become: no
   register: nvim_download
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
-- name: Extract neovim tarball
-  ansible.builtin.unarchive:
-    src: '{{ user_home }}/.local/opt/{{ neovim_arch }}.tar.gz'
-    dest: '{{ user_home }}/.local/opt/nvim'
-    remote_src: true
-    extra_opts:
-    - --strip-components=1
-    creates: '{{ user_home }}/.local/opt/nvim/bin/nvim'
-  become: false
-  timeout: 600
+
+- name: Extract neovim tarball using Python tarfile
+  ansible.builtin.shell: |
+    /usr/bin/python3 -c "
+    import tarfile, os, sys
+    src = '{{ user_home }}/.local/opt/{{ neovim_arch }}.tar.gz'
+    dst = '{{ user_home }}/.local/opt/nvim'
+    os.makedirs(dst, exist_ok=True)
+    try:
+        with tarfile.open(src) as t:
+            members = [m for m in t.getmembers() if not m.name.startswith('./')]
+            t.extractall(dst, members=members)
+        print('Extracted')
+    except Exception as e:
+        print(f'Error: {e}', file=sys.stderr)
+        sys.exit(1)
+    "
+  register: nvim_extract
+  changed_when: nvim_extract.stdout == 'Extracted'
   when:
-  - (ansible_facts['os_family'] | default('')) != 'Darwin'
-  - nvim_download is success
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - nvim_download is success
+
 - name: Link nvim into user bin
   ansible.builtin.file:
     src: '{{ user_home }}/.local/opt/nvim/bin/nvim'
     dest: '{{ user_home }}/.local/bin/nvim'
     state: link
-    force: true
-  become: false
+    force: yes
+  become: no
   when:
-  - (ansible_facts['os_family'] | default('')) != 'Darwin'
-  - nvim_download is success
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
+    - nvim_download is success
+
 - name: Remove obsolete neovim appimage
   ansible.builtin.file:
     path: '{{ user_home }}/.local/bin/nvim.appimage'
     state: absent
-  become: false
+  become: no
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
 - name: Install neovim pip package (CentOS)
   ansible.builtin.pip:
     name: '{{ neovim_pip_package }}'

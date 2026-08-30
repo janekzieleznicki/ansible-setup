@@ -1,56 +1,29 @@
 - name: Bootstrap | Fix DNF repo for Fedora
-  ansible.builtin.raw: "/bin/sh -c '\n  if command -v dnf >/dev/null 2>&1; then\n\
-    \    if grep -q \"^ID=fedora\" /etc/os-release; then\n      # Prepend IPv4 nameservers\
-    \ so DNS resolution works in slirp4netns networks\n      # (prepend, not overwrite,\
-    \ so existing nameservers are still used)\n      cp /etc/resolv.conf /tmp/resolv.conf\n\
-    \      printf \"nameserver 8.8.8.8\\n\" > /etc/resolv.conf\n      printf \"nameserver\
-    \ 8.8.4.4\\n\" >> /etc/resolv.conf\n      cat /tmp/resolv.conf >> /etc/resolv.conf\n\
-    \      rm /tmp/resolv.conf\n      # nsswitch.conf uses resolve module which queries\
-    \ systemd-resolved stub (127.0.0.53),\n      # bypassing resolv.conf entirely.\
-    \ Replace resolve with dns so glibc uses resolv.conf.\n      awk \"/^hosts:/ {\
-    \ print \\\"hosts:      files dns\\\"; next } { print }\" /etc/nsswitch.conf >\
-    \ /etc/nsswitch.conf.tmp && mv /etc/nsswitch.conf.tmp /etc/nsswitch.conf\n   \
-    \   # Force dnf/curl to use IPv4 only; slirp4netns blocks IPv6\n      mkdir -p\
-    \ /etc/dnf/dnf.conf.d\n      printf \"ip_resolve=ipv4\\n\" > /etc/dnf/dnf.conf.d/fedora-ipv4.conf\n\
-    \      printf \"check_root_gpgkey=false\\n\" >> /etc/dnf/dnf.conf.d/fedora-ipv4.conf\n\
-    \      # Set releasever so dnf uses the bundled repos without hitting the network\n\
-    \      . /etc/os-release\n      mkdir -p /etc/yum/vars\n      echo \"$VERSION_ID\"\
-    \ > /etc/yum/vars/releasever\n      dnf -y install fedora-release || {\n     \
-    \   echo \"Failed to install fedora-release\"\n        exit 1\n      }\n     \
-    \ . /etc/os-release\n      mkdir -p /etc/yum/vars\n      echo \"$VERSION_ID\"\
-    \ > /etc/yum/vars/releasever\n      dnf -y reinstall fedora-repos || {\n     \
-    \   echo \"Failed to reinstall fedora-repos\"\n        exit 1\n      }\n     \
-    \ dnf -y clean all || true\n      dnf -y --releasever=$VERSION_ID makecache ||\
-    \ {\n        echo \"Failed to makecache with releasever\"\n        exit 1\n  \
-    \    }\n    fi\n  fi\n'\n"
+  ansible.builtin.raw: "/bin/sh -c '\n  if command -v dnf >/dev/null 2>&1; then\n    if grep -q \"^ID=fedora\" /etc/os-release; then\n      # Prepend IPv4 nameservers so DNS resolution works in slirp4netns networks\n      cp /etc/resolv.conf /tmp/resolv.conf\n      printf \"nameserver 8.8.8.8\\n\" > /etc/resolv.conf\n      printf \"nameserver 8.8.4.4\\n\" >> /etc/resolv.conf\n      cat /tmp/resolv.conf >> /etc/resolv.conf\n      rm /tmp/resolv.conf\n      # nsswitch.conf uses resolve module which queries systemd-resolved stub (127.0.0.53),\n      # bypassing resolv.conf entirely. Replace resolve with dns so glibc uses resolv.conf.\n      awk \"/^hosts:/ { print \\\"hosts:      files dns\\\"; next } { print }\" /etc/nsswitch.conf > /etc/nsswitch.conf.tmp && mv /etc/nsswitch.conf.tmp /etc/nsswitch.conf\n      # Force dnf/curl to use IPv4 only; slirp4netns blocks IPv6\n      mkdir -p /etc/dnf/dnf.conf.d\n      printf \"ip_resolve=ipv4\\n\" > /etc/dnf/dnf.conf.d/fedora-ipv4.conf\n      printf \"check_root_gpgkey=false\\n\" >> /etc/dnf/dnf.conf.d/fedora-ipv4.conf\n      # Set releasever so dnf uses the bundled repos without hitting the network\n      . /etc/os-release\n      mkdir -p /etc/yum/vars\n      echo \"$VERSION_ID\" > /etc/yum/vars/releasever\n      dnf -y install fedora-release || { echo \"Failed to install fedora-release\"; exit 1; }\n      . /etc/os-release\n      mkdir -p /etc/yum/vars\n      echo \"$VERSION_ID\" > /etc/yum/vars/releasever\n      dnf -y reinstall fedora-repos || { echo \"Failed to reinstall fedora-repos\"; exit 1; }\n      dnf -y clean all || true\n      dnf -y --releasever=$VERSION_ID makecache || { echo \"Failed to makecache with releasever\"; exit 1; }\n    fi\n  fi\n'"
   become: false
   changed_when: false
   timeout: 1200
-- name: Bootstrap | Install python3 via zypper (SUSE family)
-  ansible.builtin.raw: "/bin/sh -c '\n  if command -v zypper >/dev/null 2>&1; then\n\
-    \    zypper --non-interactive install -y python311 || true\n    ln -sf /usr/bin/python3.11\
-    \ /usr/bin/python3 || true\n  fi\n'"
+
+- name: Bootstrap | Install python3 and xz via zypper (SUSE family)
+  ansible.builtin.raw: "/bin/sh -c '\n  if command -v zypper >/dev/null 2>&1; then\n    zypper --non-interactive install -y python311 xz || true\n    ln -sf /usr/bin/python3.11 /usr/bin/python3 || true\n  fi\n'"
   become: false
   changed_when: false
   timeout: 300
+
 - name: Bootstrap | Install python3 via apt (Debian family)
-  ansible.builtin.raw: "/bin/sh -c '\n  if command -v apt >/dev/null 2>&1; then\n\
-    \    export DEBIAN_FRONTEND=noninteractive\n    apt-get update -qq\n    apt-get\
-    \ install -y -qq python3\n  fi\n'"
+  ansible.builtin.raw: "/bin/sh -c '\n  if command -v apt >/dev/null 2>&1; then\n    export DEBIAN_FRONTEND=noninteractive\n    apt-get update -qq\n    apt-get install -y -qq python3\n  fi\n'"
   become: false
   changed_when: false
   timeout: 300
+
 - name: Bootstrap | Install python3.11 + symlink on EL8 (if python3 missing)
-  ansible.builtin.raw: "/bin/sh -c '\n  if command -v dnf >/dev/null 2>&1; then\n\
-    \    if ! command -v python3 >/dev/null 2>&1; then\n      if grep -q platform:el8\
-    \ /etc/os-release; then\n        if ! rpm -q epel-release >/dev/null 2>&1; then\n\
-    \          dnf -y install epel-release\n        fi\n        dnf -y config-manager\
-    \ --set-enabled powertools\n        if ! rpm -q python3.11 python3-dnf >/dev/null\
-    \ 2>&1; then\n          timeout 120 dnf -y install python3.11 python3-dnf || {\n\
-    \            timeout 120 dnf -y install --best --allowerasing python3.11 python3-dnf\n\
-    \          }\n        fi\n        ln -sf /usr/bin/python3.11 /usr/bin/python3\
-    \ || true\n      else\n        dnf install -y python3\n      fi\n    fi\n  fi\n\
-    '"
+  ansible.builtin.raw: "/bin/sh -c '\n  if command -v dnf >/dev/null 2>&1; then\n    if ! command -v python3 >/dev/null 2>&1; then\n      if grep -q platform:el8 /etc/os-release; then\n        if ! rpm -q epel-release >/dev/null 2>&1; then\n          dnf -y install epel-release\n        fi\n        dnf -y config-manager --set-enabled powertools\n        if ! rpm -q python3.11 python3-dnf >/dev/null 2>&1; then\n          timeout 120 dnf -y install python3.11 python3-dnf || {\n            timeout 120 dnf -y install --best --allowerasing python3.11 python3-dnf\n          }\n        fi\n        ln -sf /usr/bin/python3.11 /usr/bin/python3 || true\n      else\n        dnf install -y python3\n      fi\n    fi\n  fi\n'"
+  become: false
+  changed_when: false
+  timeout: 300
+
+- name: Bootstrap | Install gzip (needed by ansible unarchive module)
+  ansible.builtin.raw: "/bin/sh -c 'if command -v dnf >/dev/null 2>&1; then dnf install -y gzip; elif command -v zypper >/dev/null 2>&1; then zypper --non-interactive install -y gzip; elif command -v apt >/dev/null 2>&1; then apt-get install -y -qq gzip; fi'"
   become: false
   changed_when: false
   timeout: 300
