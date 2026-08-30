@@ -1,6 +1,6 @@
 ---
 - name: dotfiles git clone for {{ zsh_user }} using ssh
-  git:
+  ansible.builtin.git:
     repo: git@github.com:janekzieleznicki/dotfiles.git
     dest: "{{ user_home }}/.dotfiles"
     force: yes
@@ -13,39 +13,41 @@
   become: true
   become_user: "{{ zsh_user }}"
   register: ssh_github
-  ignore_errors: true
+  failed_when: false
   vars:
     allow_world_readable_tmpfiles: true
 
 - name: Fallback to dotfiles git clone for {{ zsh_user }} using https
   when: ssh_github is failed
-  git:
+  ansible.builtin.git:
     repo: https://github.com/janekzieleznicki/dotfiles.git
     dest: "{{ user_home }}/.dotfiles"
     force: yes
     version: "{{ dotfiles_version }}"
   become: true
   become_user: "{{ zsh_user }}"
-  ignore_errors: yes
+  # Removed ignore_errors
   vars:
     allow_world_readable_tmpfiles: true
 
 - name: Create ~/.config/alacritty directory
-  file:
+  ansible.builtin.file:
     path: ~/.config/alacritty
     state: directory
   become: true
   become_user: "{{ zsh_user }}"
 
 - name: dotfiles install for {{ zsh_user }}
-  command: "{{ user_home }}/.dotfiles/install"
+  ansible.builtin.command:
+    argv: ["{{ user_home }}/.dotfiles/install"]
+  creates: "{{ user_home }}/.zshrc"
   timeout: 3600
   become: true
   become_user: "{{ zsh_user }}"
 
 - name: change user shell to zsh
   become: true
-  user:
+  ansible.builtin.user:
     name: "{{ zsh_user }}"
     shell: /bin/zsh
 
@@ -58,7 +60,9 @@
   become_user: "{{ zsh_user }}"
 
 - name: Run rustup installer
-  ansible.builtin.command: /tmp/rustup.sh -y --no-modify-path
+  ansible.builtin.command:
+    argv: ["/tmp/rustup.sh", "-y", "--no-modify-path"]
+  creates: "{{ user_home }}/.cargo/bin/rustup"
   timeout: 600
   become: true
   become_user: "{{ zsh_user }}"
@@ -76,7 +80,8 @@
         exit 0
       fi
     '
-  ignore_errors: yes
+  changed_when: false
+  failed_when: false
   become: true
   become_user: "{{ zsh_user }}"
 
@@ -92,7 +97,7 @@
   ansible.builtin.template:
     src: alacritty.desktop
     dest: ~/.local/share/applications/alacritty.desktop
-  ignore_errors: true
+  failed_when: false
   become: true
   become_user: "{{ zsh_user }}"
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
@@ -101,7 +106,7 @@
   ansible.builtin.template:
     src: alacritty.icon.svg
     dest: ~/.config/alacritty/icon.svg
-  ignore_errors: true
+  failed_when: false
   become: true
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
   become_user: "{{ zsh_user }}"

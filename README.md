@@ -42,17 +42,21 @@ Supported distribution images:
 - `make`
 - `python3` with virtualenv support
 
-First time setup (creates `.venv`, installs Molecule and Ansible collections):
+First time setup (creates `.venv`, installs Molecule, dependencies, and linting tools):
 
 ```bash
+make .venv
 make deps
 ```
 
-Build the container images used by both scenarios:
 
+### Usage Note: Tool Paths
+If you have multiple Ansible versions installed, ensure the environment-local `ansible-playbook` is used.
+When running playbooks manually, prefer:
 ```bash
-make images
+$(which ansible-playbook) -e user=$USER ...
 ```
+or use the absolute path to your environment's binary.
 
 Run the suites:
 

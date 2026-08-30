@@ -1,9 +1,5 @@
 ---
 terraform_libvirt_plugin_vers: 0.6.3
-username: "{{ ansible_facts['user_id'] }}"
-user_groups:
-  - libvirt
-  - vagrant
 
 sudoers_redhat: |
   Cmnd_Alias VAGRANT_EXPORTS_CHOWN = /bin/chown 0\:0 /tmp/vagrant-exports

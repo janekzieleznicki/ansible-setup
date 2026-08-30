@@ -2,8 +2,5 @@
 - hosts: all
   gather_facts: True
   roles:
-    - role: server
-      tags: dotfiles
-    - role: terraform
-      tags: virtools 
-      become: true
+    - { role: server, tags: dotfiles }
+    - { role: terraform, tags: virtools, become: true }

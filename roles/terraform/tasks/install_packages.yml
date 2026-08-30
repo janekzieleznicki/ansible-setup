@@ -1,54 +1,57 @@
 ---
 - name: Load terraform packages redhat variable file
-  include_vars: packages_redhat.yml
+  ansible.builtin.include_vars: packages_redhat.yml
 
 - name: Load terraform packages debian variable file
-  include_vars: packages_debian.yml
+  ansible.builtin.include_vars: packages_debian.yml
 
 - name: Load terraform packages darwin variable file
-  include_vars: packages_darwin.yml
+  ansible.builtin.include_vars: packages_darwin.yml
 
 - name: Install dnf plugins core (for config-manager)
-  dnf:
+  ansible.builtin.dnf:
     name: dnf-plugins-core
     state: present
   when: ansible_facts['os_family'] == "RedHat"
 
 - name: Enable CRB / Powertools repository for devel packages (Alma/Rocky)
-  ansible.builtin.command: "dnf config-manager --set-enabled {{ 'crb' if ansible_distribution_major_version | int >= 9 else 'powertools' }}"
-  when: ansible_distribution in ['AlmaLinux', 'Rocky']
+  ansible.builtin.command:
+    argv: [dnf, config-manager, --set-enabled, "{{ 'crb' if ansible_facts['distribution_major_version'] | int >= 9 else 'powertools' }}"]
+  when: ansible_facts['distribution'] in ['AlmaLinux', 'Rocky']
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Enable CodeReady Builder on Oracle Linux
-  ansible.builtin.command: "dnf config-manager --set-enabled ol{{ ansible_distribution_major_version }}_codeready_builder"
-  when: ansible_distribution == "OracleLinux"
+  ansible.builtin.command:
+    argv: [dnf, config-manager, --set-enabled, "ol{{ ansible_facts['distribution_major_version'] }}_codeready_builder"]
+  when: ansible_facts['distribution'] == "OracleLinux"
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Enable CodeReady Builder on RHEL
-  ansible.builtin.command: "subscription-manager repos --enable codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms"
-  when: ansible_distribution == "RedHat"
+  ansible.builtin.command:
+    argv: [subscription-manager, repos, --enable, "codeready-builder-for-rhel-{{ ansible_facts['distribution_major_version'] }}-{{ ansible_facts['architecture'] }}-rpms"]
+  when: ansible_facts['distribution'] == "RedHat"
   changed_when: false
-  ignore_errors: true
+  failed_when: false
 
 - name: Install @virtualization group on RedHats
-  dnf:
+  ansible.builtin.dnf:
     name: "{{ packages_redhat }}"
     state: present
     allowerasing: true
   when: ansible_facts['os_family'] == "RedHat"
-  ignore_errors: yes
+  failed_when: false
 
 - name: Install deps on Debians
-  apt:
+  ansible.builtin.apt:
     name: "{{ packages_debian }}"
     state: present
     update_cache: yes
   when: ansible_facts['os_family'] == 'Debian'
 
 - name: Enable source repos on Debains
-  replace:
+  ansible.builtin.replace:
     path: /etc/apt/sources.list
     regexp: '# deb-src '
     replace: 'deb-src '

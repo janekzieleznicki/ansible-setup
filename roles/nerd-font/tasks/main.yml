@@ -7,18 +7,21 @@
   when: (ansible_facts['os_family'] | default('')) == 'Darwin'
 
 - name: ensure fonts directory
-  file:
+  ansible.builtin.file:
     path: "/home/{{ zsh_user }}/.local/share/fonts"
     state: directory
+    mode: '0755'
   become: yes
   become_user: "{{ zsh_user }}"
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
-- name: "{{ font }} exists"
-  shell: "ls /home/{{ zsh_user }}/.local/share/fonts/{{ font }}*Nerd*Font*Complete*"
-  register: font_exists
-  ignore_errors: yes
+- name: "Check for installed {{ font }} Nerd Font"
+  ansible.builtin.find:
+    paths: "/home/{{ zsh_user }}/.local/share/fonts"
+    patterns: "{{ font }}*Nerd*Font*Complete*"
+  register: font_find
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
+
 
 - name: Ensure archive utilities are installed
   ansible.builtin.package:
@@ -30,7 +33,9 @@
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: "Download {{ font }}"
-  when: font_exists is failed and (ansible_facts['os_family'] | default('')) != 'Darwin'
+  when:
+    - font_find.matched | default(0) == 0
+    - (ansible_facts['os_family'] | default('')) != 'Darwin'
   ansible.builtin.unarchive:
     src: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.3.2/{{ font }}.zip
     dest: "/home/{{ zsh_user }}/.local/share/fonts"

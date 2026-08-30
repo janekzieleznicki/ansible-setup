@@ -45,7 +45,7 @@
   when: (ansible_facts['os_family'] | default('')) == 'Darwin'
 
 - name: Install OpenTofu
-  package:
+  ansible.builtin.package:
     name: tofu
     state: latest
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'

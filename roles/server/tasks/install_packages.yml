@@ -1,35 +1,39 @@
 ---
 - name: Load server packages rpm variable file
-  include_vars: packages_rpm.yml
+  ansible.builtin.include_vars: packages_rpm.yml
 
 - name: Load server packages apt variable file
-  include_vars: packages_apt.yml
+  ansible.builtin.include_vars: packages_apt.yml
 
 - name: Load server neovim variable file
-  include_vars: neovim.yml
+  ansible.builtin.include_vars: neovim.yml
 
 - name: Load server fonts variable file
-  include_vars: fonts.yml
+  ansible.builtin.include_vars: fonts.yml
 
 - name: Load server packages suse variable file
-  include_vars: packages_suse.yml
+  ansible.builtin.include_vars: packages_suse.yml
 
 - name: Load server packages brew variable file
-  include_vars: packages_brew.yml
+  ansible.builtin.include_vars: packages_brew.yml
 
 - name: Distro debug
   ansible.builtin.debug:
-    msg: "Detected os_family: {{ ansible_os_family | default('unknown') }} and distribution: {{ ansible_distribution | default('unknown') }} version: {{ ansible_distribution_major_version | default('unknown') }}"
+    msg: "Detected os_family: {{ ansible_facts['os_family'] | default('unknown') }} and distribution: {{ ansible_facts['distribution'] | default('unknown') }} version: {{ ansible_facts['distribution_major_version'] | default('unknown') }}"
 
 - name: Clean dnf lock files
   ansible.builtin.raw: |
     rm -f /var/run/dnf.pid /var/lib/dnf/lock
-  ignore_errors: yes
+  changed_when: false
+  failed_when: false
 
 - name: Update DNF cache
-  ansible.builtin.command: dnf makecache
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  ansible.builtin.command:
+    argv: [dnf, makecache]
+  changed_when: false
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
+  # noqa: command-instead-of-module
 
 - name: Install dnf-plugins-core for RedHat family
   ansible.builtin.raw: |
@@ -44,8 +48,9 @@
         exit 0
       fi
     '
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  changed_when: false
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 120
 
 - name: Install RPM packages (RedHat family) - chunk 1
@@ -56,9 +61,8 @@
       - git
       - curl
       - gcc
-    state: present
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 600
 
 - name: Install RPM packages (RedHat family) - chunk 2
@@ -67,17 +71,15 @@
       - gcc-c++
       - cmake
       - golang
-    state: present
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 600
 
 - name: Install nodejs for RedHat family
   ansible.builtin.dnf:
     name: nodejs
-    state: present
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 600
 
 - name: Install RPM packages (RedHat family) - chunk 3
@@ -87,18 +89,16 @@
       - python3-pip
       - python3-setuptools
       - python3-devel
-    state: present
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 600
 
 - name: Install RPM packages (RedHat family) - chunk 4
   ansible.builtin.dnf:
     name:
       - unzip
-    state: present
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 600
 
 - name: Install X11/xcb build deps for cargo alacritty (RedHat family)
@@ -112,9 +112,8 @@
       - libXcursor-devel
       - libXrandr-devel
       - libXi-devel
-    state: present
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 600
 
 - name: Install X11/xcb build deps for cargo alacritty (Suse family)
@@ -156,26 +155,26 @@
 - name: Enable CRB / Powertools repository for devel packages
   block:
     - name: Enable CodeReady Builder on Red Hat Enterprise Linux
-      ansible.builtin.command: subscription-manager repos --enable "codeready-builder-for-rhel-{{ ansible_distribution_major_version }}-{{ ansible_architecture }}-rpms"
-      when: ansible_distribution == "RedHat"
-      register: rhel_crb
-      changed_when: "'enabled' in rhel_crb.stdout"
+      ansible.builtin.command:
+        argv: [subscription-manager, repos, --enable, "codeready-builder-for-rhel-{{ ansible_facts['distribution_major_version'] }}-{{ ansible_facts['architecture'] }}-rpms"]
+      when: ansible_facts['distribution'] == "RedHat"
+      changed_when: false
       timeout: 120
 
     - name: Enable CodeReady Builder on Oracle Linux
-      ansible.builtin.command: dnf config-manager --set-enabled "ol{{ ansible_distribution_major_version }}_codeready_builder"
-      when: ansible_distribution == "OracleLinux"
-      register: oracle_crb
-      changed_when: oracle_crb.rc == 0
+      ansible.builtin.command:
+        argv: [dnf, config-manager, --set-enabled, "ol{{ ansible_facts['distribution_major_version'] }}_codeready_builder"]
+      when: ansible_facts['distribution'] == "OracleLinux"
+      changed_when: false
       timeout: 120
 
     - name: Enable CRB / Powertools on CentOS, Rocky, or AlmaLinux
-      ansible.builtin.command: "dnf config-manager --set-enabled {{ 'crb' if ansible_distribution_major_version | int >= 9 else 'powertools' }}"
-      when: ansible_distribution in ["CentOS", "Rocky", "AlmaLinux"]
-      register: clone_crb
-      changed_when: clone_crb.rc == 0
+      ansible.builtin.command:
+        argv: [dnf, config-manager, --set-enabled, "{{ 'crb' if ansible_facts['distribution_major_version'] | int >= 9 else 'powertools' }}"]
+      when: ansible_facts['distribution'] in ["CentOS", "Rocky", "AlmaLinux"]
+      changed_when: false
       timeout: 120
-  when: ansible_os_family == "RedHat" and ansible_distribution != "Fedora"
+  when: ansible_facts['os_family'] == "RedHat" and ansible_facts['distribution'] != "Fedora"
 
 - name: Install EPEL repository for RHEL derivatives (skip Fedora and OracleLinux)
   ansible.builtin.dnf:
@@ -183,15 +182,14 @@
     state: present
     disable_gpg_check: yes
   when:
-    - ansible_os_family == "RedHat"
+    - ansible_facts['os_family'] == "RedHat"
     - ansible_distribution not in ["Fedora", "Fedora Linux", "OracleLinux", "OracleLinuxServer"]
 
 - name: Install python3-neovim for RedHat family (after EPEL)
   ansible.builtin.dnf:
     name: python3-neovim
-    state: present
-  ignore_errors: yes
-  when: ansible_os_family == "RedHat"
+  failed_when: false
+  when: ansible_facts['os_family'] == "RedHat"
   timeout: 300
 
 - name: Install apt-utils for Debian family
@@ -199,14 +197,14 @@
     name: apt-utils
     state: present
     update_cache: yes
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
 
 - name: Install packages apt
   ansible.builtin.apt:
     name: "{{ packages_apt }}"
     state: present
     update_cache: yes
-  when: ansible_os_family == "Debian"
+  when: ansible_facts['os_family'] == "Debian"
 
 - name: Install neovim python package
   ansible.builtin.pip:
@@ -273,7 +271,7 @@
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: Install fonts
-  include_role:
+  ansible.builtin.include_role:
     name: nerd-font
   vars:
     font: "{{ item }}"
@@ -285,7 +283,7 @@
   ansible.builtin.zypper:
     name: "{{ packages_suse }}"
     state: present
-  when: ansible_os_family == "Suse"
+  when: ansible_facts['os_family'] == "Suse"
 
 - name: Ensure Homebrew is installed (macOS)
   ansible.builtin.shell: |

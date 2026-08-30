@@ -1,7 +1,7 @@
 ---
 
 - name: Build-deps on Debians for vagrant-libvirt
-  apt:
+  ansible.builtin.apt:
     name:
      - vagrant
      - ruby-libvirt
@@ -54,7 +54,7 @@
     label: "{{ item }}"
 
 - name: Add user to group
-  user:
+  ansible.builtin.user:
     name: '{{ username }}'
     groups: "{{ item }}"
     append: yes
@@ -82,10 +82,13 @@
     - virtstoraged.socket
   when: 
     - ansible_facts['distribution'] == "Fedora" or ansible_facts['os_family'] == "Suse"
-  ignore_errors: true
+  failed_when: false
 
 - name: Install vagrant-libvirt
-  shell: vagrant plugin install vagrant-libvirt
-  become: yes
+  ansible.builtin.command:
+    argv: [vagrant, plugin, install, vagrant-libvirt]
+  register: vagrant_plugin
+  changed_when: vagrant_plugin.rc == 0
+  failed_when: vagrant_plugin.rc != 0 and 'already installed' not in (vagrant_plugin.stdout ~ vagrant_plugin.stderr)
+  become: true
   become_user: "{{ username }}"
-
