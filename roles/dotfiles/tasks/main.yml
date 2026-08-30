@@ -20,7 +20,7 @@
   ansible.builtin.file:
     path: "{{ user_home }}/.config/alacritty"
     state: directory
-    become: no
+  become: no
 
 - name: Run dotfiles install script
   ansible.builtin.shell: |
@@ -56,7 +56,7 @@
   ansible.builtin.file:
     path: "{{ user_home }}/.local/share/applications"
     state: directory
-    become: no
+  become: no
 
 - name: Template alacritty desktop entry
   ansible.builtin.template:

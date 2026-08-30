@@ -49,9 +49,8 @@
       - python3-devel
       - unzip
     state: present
-    failed_when: false
+  failed_when: false
   when: ansible_facts['os_family'] == "RedHat"
-  timeout: 600
 
 - name: Install go for Fedora
   ansible.builtin.raw: |
@@ -124,7 +123,7 @@
 
 - name: Install packages apt
   ansible.builtin.apt:
-    name: "{{ packages_apt }}"
+    name: "{{ packages_debian }}"
     state: present
     update_cache: yes
   when: ansible_facts['os_family'] == "Debian"
