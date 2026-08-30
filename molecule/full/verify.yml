@@ -1,116 +1,122 @@
----
 - name: Verify full
   hosts: all
   gather_facts: true
   vars:
-package_sets:
-  RedHat:
-    - zsh
-    - acl
-    - git
-    - curl
-    - gcc
-    - gcc-c++
-    - cmake
-    - golang
-    - nodejs
-    - python3
-    - python3-pip
-    - python3-setuptools
-    - python3-devel
-    - unzip
-    - fontconfig-devel
-  Suse:
-    - zsh
-    - acl
-    - git
-    - curl
-    - gcc
-    - gcc-c++
-    - cmake
-    - golang
-    - nodejs
-    - python3
-    - python3-pip
-    - python3-setuptools
-    - python3-devel
-    - unzip
-    - fontconfig-devel
+    package_sets:
+      RedHat:
+      - zsh
+      - acl
+      - git
+      - curl
+      - gcc
+      - gcc-c++
+      - cmake
+      - golang
+      - fuse3
+      - nodejs
+      - python3
+      - python3-pip
+      - python3-setuptools
+      - python3-devel
+      - unzip
+      - fontconfig-devel
+      Suse:
+      - zsh
+      - acl
+      - git
+      - curl
+      - gcc
+      - gcc-c++
+      - cmake
+      - golang
+      - fuse3
+      - nodejs
+      - python3
+      - python3-pip
+      - python3-setuptools
+      - python3-devel
+      - unzip
+      - fontconfig-devel
+      Debian:
+      - zsh
+      - acl
+      - git
+      - curl
+      - gcc
+      - g++
+      - cmake
+      - golang-go
+      - nodejs
+      - python3
+      - python3-pip
+      - python3-venv
+      - unzip
+      - libfontconfig1-dev
     extra_packages:
-      Fedora: [python3-neovim]
-      RedHat: [epel-release]
-    expected_packages: "{{ package_sets[ansible_facts['os_family']] | default([])
-        + extra_packages[ansible_facts['distribution']] | default([]) }}"
+      Fedora:
+      - python3-neovim
+      RedHat:
+      - epel-release
+    expected_packages: '{{ package_sets[ansible_facts[''os_family'']] | default([])
+      + extra_packages[ansible_facts[''distribution'']] | default([]) }}'
     artifact_paths:
-      - /home/root/.local/bin/nvim
-      - /root/.config/alacritty/icon.svg
-      - /home/root/.dotfiles
-      - /root/.cargo/bin/rustup
-      - /root/.cargo/bin/cargo
-      - /root/.cargo/bin/rg
-      - /root/.cargo/bin/zoxide
-      - /root/.cargo/bin/alacritty
+    - /home/root/.local/bin/nvim
+    - /root/.config/alacritty/icon.svg
+    - /home/root/.dotfiles
   tasks:
-    - name: Check package installation
-      ansible.builtin.command: rpm -q --whatprovides {{ item }} # noqa: command-instead-of-module
-      register: pkg_check
-      changed_when: false
-      failed_when: false
-      loop: "{{ expected_packages }}"
-
-    - name: Assert packages were installed by the role
+  - name: Check package installation
+    ansible.builtin.command: rpm -q --whatprovides {{ item }}
+    register: pkg_check
+    changed_when: false
+    failed_when: false
+    loop: '{{ expected_packages }}'
+  - name: Assert packages were installed by the role
+    ansible.builtin.assert:
+      that:
+      - item.rc == 0
+    loop: '{{ pkg_check.results }}'
+  - name: Check installed artifacts exist
+    ansible.builtin.stat:
+      path: '{{ item }}'
+    register: artifacts
+    loop: '{{ artifact_paths }}'
+  - name: Assert artifacts are present
+    ansible.builtin.assert:
+      that:
+      - item.stat.exists
+    loop: '{{ artifacts.results }}'
+  - name: Assert nvim is executable
+    ansible.builtin.assert:
+      that:
+      - artifacts.results[0].stat.executable
+  - name: Check nvim runs
+    ansible.builtin.command: /home/root/.local/bin/nvim --version
+    register: nvim_version
+    changed_when: false
+  - name: Assert nvim version output
+    ansible.builtin.assert:
+      that:
+      - '''NVIM'' in nvim_version.stdout'
+  - block:
+    - name: Find installed nerd fonts
+      ansible.builtin.find:
+        paths: /home/root/.local/share/fonts
+        patterns: '*Nerd*Font*Complete*'
+      register: fonts
+    - name: Assert Hack and JetBrainsMono nerd fonts are installed
       ansible.builtin.assert:
         that:
-          - item.rc == 0
-      loop: "{{ pkg_check.results }}"
-
-    - name: Check installed artifacts exist
-      ansible.builtin.stat:
-        path: "{{ item }}"
-      register: artifacts
-      loop: "{{ artifact_paths }}"
-
-    - name: Assert artifacts are present
-      ansible.builtin.assert:
-        that:
-          - item.stat.exists
-      loop: "{{ artifacts.results }}"
-
-    - name: Assert nvim is executable
-      ansible.builtin.assert:
-        that:
-          - artifacts.results[0].stat.executable
-    - name: Check nvim runs
-      ansible.builtin.command: /home/root/.local/bin/nvim --version
-      register: nvim_version
-      changed_when: false
-
-    - name: Assert nvim version output
-      ansible.builtin.assert:
-        that:
-          - "'NVIM' in nvim_version.stdout"
-
-    - block:
-        - name: Find installed nerd fonts
-          ansible.builtin.find:
-            paths: /home/root/.local/share/fonts
-            patterns: "*Nerd*Font*Complete*"
-          register: fonts
-
-        - name: Assert Hack and JetBrainsMono nerd fonts are installed
-          ansible.builtin.assert:
-            that:
-              - fonts.matched > 0
-              - "'Hack' in (fonts.files | map(attribute='path') | map('basename') | join(' '))"
-              - "'JetBrains' in (fonts.files | map(attribute='path') | map('basename') | join(' '))"
-      when: ansible_distribution != "Fedora"
-
-    - name: Check root login shell
-      ansible.builtin.command: getent passwd root
-      register: root_passwd
-      changed_when: false
-
-    - name: Assert root shell is zsh
-      ansible.builtin.assert:
-        that:
-          - "'/bin/zsh' in root_passwd.stdout"
+        - fonts.matched > 0
+        - '''Hack'' in (fonts.files | map(attribute=''path'') | map(''basename'')
+          | join('' ''))'
+        - '''JetBrains'' in (fonts.files | map(attribute=''path'') | map(''basename'')
+          | join('' ''))'
+    when: ansible_distribution != "Fedora"
+  - name: Check root login shell
+    ansible.builtin.command: getent passwd root
+    register: root_passwd
+    changed_when: false
+  - name: Assert root shell is zsh
+    ansible.builtin.assert:
+      that:
+      - '''/bin/zsh'' in root_passwd.stdout'

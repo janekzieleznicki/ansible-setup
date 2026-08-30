@@ -86,7 +86,7 @@
     \ \"python3 package already installed\"\n      fi\n    fi\n  fi\n'\n"
   become: false
   changed_when: false
-  timeout: 1200
+  timeout: 600
   tags:
   - install
 - name: Bootstrap | Install deps via apt (Debian family)
