@@ -47,6 +47,7 @@
   when: (ansible_facts['os_family'] | default('')) != 'Darwin'
 
 - name: Insert sudoers config for NFS
+  become: true
   ansible.builtin.blockinfile:
     block:  "{{ sudoers }}"
     path: /etc/sudoers.d/vagrant-nfs

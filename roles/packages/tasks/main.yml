@@ -102,7 +102,6 @@
   ansible.builtin.dnf:
     name: epel-release
     state: present
-    disable_gpg_check: yes
   when:
     - ansible_facts['os_family'] == "RedHat"
     - ansible_distribution not in ["Fedora", "Fedora Linux", "OracleLinux", "OracleLinuxServer"]

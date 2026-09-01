@@ -1,16 +1,20 @@
 ---
 # OpenTofu repository tasks
-- name: Install OpenTofu repo key on Debian
-  apt_key:
+- name: Download OpenTofu GPG key
+  ansible.builtin.get_url:
     url: https://apt.opentofu.org/apt.gpg
-    state: present
+    dest: /etc/apt/keyrings/opentofu-archive-keyring.gpg
+    mode: '0644'
   when: ansible_facts['os_family'] == 'Debian'
 
-- name: Install OpenTofu apt repo on Debian
-  apt_repository:
-    repo: deb https://apt.opentofu.org/{{ ansible_facts['lsb']['codename'] }} main
-    state: present
-    filename: opentofu
+- name: Add OpenTofu deb822 repository on Debian
+  ansible.builtin.deb822_repository:
+    name: opentofu
+    types: deb
+    uris: https://apt.opentofu.org/
+    suites: "{{ ansible_facts['lsb']['codename'] }}"
+    components: main
+    signed_by: /etc/apt/keyrings/opentofu-archive-keyring.gpg
   when: ansible_facts['os_family'] == 'Debian'
 
 # 2. Add the official OpenTofu Repository (RedHat / Fedora)
