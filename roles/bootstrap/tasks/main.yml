@@ -24,9 +24,6 @@
 - name: Bootstrap | Install deps via dnf (RedHat family) - Other
   ansible.builtin.raw: "/bin/sh -c 'if command -v dnf >/dev/null 2>&1; then if ! rpm -q python3 python3-dnf sudo curl tar gnupg wget >/dev/null 2>&1; then timeout 120 dnf -y install python3 python3-dnf sudo curl tar gnupg wget || timeout 120 dnf -y install --best --allowerasing python3 python3-dnf sudo curl tar gnupg wget; fi; dnf -y install python3-libdnf5 || true; fi'"
   become: false
-- name: Bootstrap | Verify python interpreter present
-  ansible.builtin.raw: '{{ ansible_python_interpreter | default(''/usr/bin/python3'') }} --version
-'
 - name: Bootstrap | Install deps via zypper (SUSE family)
   ansible.builtin.raw: "/bin/sh -c '\n  if command -v zypper >/dev/null 2>&1; then\n    if [ -f /etc/os-release ] && grep -Eq \"VERSION_ID=\\\"1[56]\" /etc/os-release; then\n      if ! rpm -q python3 python311 python311-rpm python3-rpm >/dev/null 2>&1; then\n        zypper --non-interactive install python3 python311 python311-rpm python3-rpm sudo curl tar gnupg wget unzip\n      else\n        echo \"python3 packages already installed\"\n      fi\n    else\n      if ! rpm -q python3 python3-rpm >/dev/null 2>&1; then\n        zypper --non-interactive install python3 python3-rpm sudo curl tar gnupg wget unzip\n      else\n        echo \"python3 package already installed\"\n      fi\n    fi\n  fi\n'\n"
   become: false
@@ -40,7 +37,8 @@
   become: false
   changed_when: false
   timeout: 1200
-  tags:
-    - install
 
-  timeout: 1200
+- name: Bootstrap | Verify python interpreter present
+  ansible.builtin.raw: '{{ ansible_python_interpreter | default(''/usr/bin/python3'') }} --version
+'
+  become: false
